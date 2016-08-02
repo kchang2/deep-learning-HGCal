@@ -101,9 +101,9 @@ for iev,event in enumerate(events):
             r_wafer.append(hid.wafer())
             r_cell.append(hid.cell())
 
-            r_x.append(hit.x())
-            r_y.append(hit.y())
-            r_z.append(hit.z())
+            # r_x.append(hit.x())
+            # r_y.append(hit.y())
+            # r_z.append(hit.z())
             # r_eta.append(hit.eta())
             # r_phi.append(hit.phi())
             r_energy.append(hit.energy())
