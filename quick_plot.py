@@ -63,10 +63,10 @@ for iev,event in enumerate(events):
     # basically checks to see if data and label are there -- the labels should be unique.
     for i in xrange(2):
         event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
-        print hgcalHitsLabel[i][0]
-        print hgcalHitsLabel[i][1]
-        print hgcalHitsLabel[i][2]
-        print hgcalHits[i]
+        # print hgcalHitsLabel[i][0]
+        # print hgcalHitsLabel[i][1]
+        # print hgcalHitsLabel[i][2]
+        # print hgcalHits[i]
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
 
@@ -88,9 +88,7 @@ for iev,event in enumerate(events):
         for hit in hits:
             # getting cell information
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
-
-            w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
-
+            # w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
 
             # numpy
             r_layer.append(hid.layer())
