@@ -16,7 +16,7 @@
 
 
 # import ROOT in batch mode
-import sys
+import sys, os
 import numpy as np
 oldargv = sys.argv[:]
 sys.argv = [ '-b-' ]
@@ -44,10 +44,16 @@ hgcalHits, hgcalHitsLabel = [Handle('edm::SortedCollection<HGCRecHit,edm::Strict
                              Handle('edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >')], ["HGCalRecHit:HGCEERecHits:".split(":"),
                                                                                                                "HGCalRecHit:HGCHEFRecHits:".split(":")]
 
-out = TFile.Open('energies.root','recreate')
+# create root file
+out = TFile.Open('info.root','recreate')
 out.cd()
-
 rechit_energy = TH1F('rechit_energy','; RecHit Energy (GeV)',500,0,10)
+
+# cretes output array
+outArray = []
+
+# clear the terminal
+os.system('clear')
 
 for iev,event in enumerate(events):
     # print iev, event  iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
@@ -60,14 +66,67 @@ for iev,event in enumerate(events):
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
 
+
+    # event in list of events
     for hits in hgcalRh:
+        # rechit info
+        eventArray = []
+        names = ""
+        r_layer         = []
+        r_wafer         = []
+        r_cell          = []
+        r_x             = []
+        r_y             = []
+        r_z             = []
+        r_eta           = []
+        r_phi           = []
+        r_energy        = []
+        r_time          = []
+        r_thickness     = []
+        r_isHalf        = []
+        r_flags         = []
+        r_cluster2d     = []
+
+        # hits in each event
         for hit in hits:
-            #### example of getting cell information
-            #hid = ROOT.HGCalDetId(hit.id())
-            #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
+            # getting cell information
+            hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
+
+            # numpy
+            r_layer.append(hid.layer())
+            r_wafer.append(hid.wafer())
+            r_cell.append(hid.cell())
+
+            r_x.append(hit.x())
+            r_y.append(hit.y())
+            r_z.append(hit.z())
+            r_eta.append(hit.eta())
+            r_phi.append(hit.phi())
+            r_energy.append(hit.energy())
+            r_time.append(hit.time())
+            r_thickness.append(hit.thickness())
+            r_isHalf.append(hit.isHalf())
+            r_flags.append(hit.flags())
+            r_cluster2d.append(hit.cluster2d())
+
+            rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_x, r_y, r_z, \
+                r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
+                names='layer, wafer, cell, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
+            eventArray.append(rechits_array)
+            names += 'rechits'
+
+
+            # histogram for ROOT file
             rechit_energy.Fill(hit.energy())
+
+        outArray.append(eventArray)
+
+print 'writing files'
+np.save('rechit.npy', outArray)
 
 out.Write()
 out.Close()
+
+print 'Process complete.'
     
             
