@@ -17,7 +17,7 @@
 
 # import ROOT in batch mode
 import sys
-import numpy
+import numpy as np
 oldargv = sys.argv[:]
 sys.argv = [ '-b-' ]
 import ROOT
@@ -59,8 +59,6 @@ for iev,event in enumerate(events):
         event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
-    print hgcalRh
-    exit()
 
     for hits in hgcalRh:
         for hit in hits:
@@ -68,7 +66,6 @@ for iev,event in enumerate(events):
             #hid = ROOT.HGCalDetId(hit.id())
             #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
             rechit_energy.Fill(hit.energy())
-
 
 out.Write()
 out.Close()
