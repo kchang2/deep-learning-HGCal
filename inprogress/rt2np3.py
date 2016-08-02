@@ -36,10 +36,10 @@ parser.add_argument("-d", "--directory", \
 	help="Process all files in this directory.", action="store_true")
 parser.add_argument("input_d", \
 	help="File to process. If -f is used, process only a single file.")
-parser.add_argument("-f", "--file", \
-	help="Process all files in this directory.", action="store_true")
-parser.add_argument("input_f", \
-	help="File to process.")
+# parser.add_argument("-f", "--file", \
+# 	help="Process all files in this directory.", action="store_true")
+# parser.add_argument("input_f", \
+# 	help="File to process.")
 parser.add_argument("-o", "--outdir", \
 	help="Directory to save output to. Defaults to Data/.", action="store")
 args = parser.parse_args()
@@ -125,6 +125,8 @@ def process(f, outdir):
 		# rechits
 		rechits 	= True
 		r_layer	 		= []
+		# r_wafer			= []
+		# r_cell			= []
 		r_x 			= []
 		r_y 			= []
 		r_z 			= []
@@ -194,6 +196,8 @@ def process(f, outdir):
 		if rechits:
 			for hit in tree.rechits:
 				r_layer.append(hit.layer)
+				r_wafer.append(hit.wafer)
+				r_cell.append(hit.cell)
 				r_x.append(hit.x)
 				r_y.append(hit.y)
 				r_z.append(hit.z)
@@ -207,7 +211,7 @@ def process(f, outdir):
 				r_cluster2d.append(hit.cluster2d)
 			rechits_array = np.core.records.fromarrays([r_layer, r_x, r_y, r_z, \
 				r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
-				names='x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
+				names='layer, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d') # wafer, cell, r_wafer, r_cell, 
 			eventArray.append(rechits_array)
 			names += 'rechits'
 		else:
@@ -268,22 +272,25 @@ if __name__ == "__main__":
 	else:
 		outdir = args.outdir
 
-	if args.directory:
-		directory = args.input_d
-	else:
+	if args.directory == None:
 		directory = os.getcwd()
+	else:
+		directory = args.input_d
 	os.chdir(directory)
 
-	if args.file:
-		f = args.input_f
-	else:
-		f = [files for files in os.listdir(directory) if files.endswith(".root")] 
+	files = [f for f in os.listdir(directory) if f.endswith('.root')]
+
+
+	# if args.file == None:
+	# 	f = args.input_f
+	# else:
+	# 	f = [files for files in os.listdir(directory) if files.endswith(".root")] 
 
 
 
 	# f = 'twogamma_pt5_eta2_nosmear_calib_ntuple.root'
 	# outdir = '/afs/cern.ch/user/k/kachang/work/public/CMSSW_8_1_0_pre8/src/RecoNtuples/HGCalAnalysis/test/'
-	for file in f:
+	for file in files:
 		try:
 			process(file, outdir)
 		except TypeError:
