@@ -84,6 +84,12 @@ for iev,event in enumerate(events):
         r_thickness     = []
         r_isHalf        = []
 
+    print hits.length()
+    exit()
+    # progress bar
+    pbar = progressbar("Stacking", hits.length())
+    pbar.start()
+
         # hits in each event
         for hit in hits:
             # getting cell information
@@ -110,6 +116,7 @@ for iev,event in enumerate(events):
 
             # histogram for ROOT file
             rechit_energy.Fill(hit.energy())
+            pbar.update(1)
 
         outArray.append(eventArray)
 
