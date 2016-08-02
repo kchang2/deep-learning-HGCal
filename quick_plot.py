@@ -79,48 +79,33 @@ for iev,event in enumerate(events):
         r_layer         = []
         r_wafer         = []
         r_cell          = []
-        # r_x             = []
-        # r_y             = []
-        # r_z             = []
-        # r_eta           = []
-        # r_phi           = []
         r_energy        = []
         # r_time          = []
         r_thickness     = []
         r_isHalf        = []
-        # r_flags         = []
-        # r_cluster2d     = []
 
         # hits in each event
         for hit in hits:
             # getting cell information
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
 
+            topo = ROOT.HGCalGeometry.hgeoHandleEE.topology();
+            dddConst = topo.dddConstants()
+
             # numpy
             r_layer.append(hid.layer())
             r_wafer.append(hid.wafer())
             r_cell.append(hid.cell())
 
-            # r_x.append(hit.x())
-            # r_y.append(hit.y())
-            # r_z.append(hit.z())
-            # r_eta.append(hit.eta())
-            # r_phi.append(hit.phi())
             r_energy.append(hit.energy())
             # r_time.append(hit.time())
-            r_thickness.append(hit.thickness())
+            r_thickness.append(hid.thickness())
             r_isHalf.append(hit.isHalf())
-            # r_flags.append(hit.flags())
-            # r_cluster2d.append(hit.cluster2d())
 
             rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
                 r_energy, r_thickness, r_isHalf], \
                 names='layer, wafer, cell, energy, thickness, isHalf')
 
-
-            # rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_x, r_y, r_z, \
-            #     r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
-            #     names='layer, wafer, cell, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
             eventArray.append(rechits_array)
             names += 'rechits'
 
