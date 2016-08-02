@@ -65,6 +65,7 @@ for iev,event in enumerate(events):
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
 
+    i = 0
 
     # event in list of events
     for hits in hgcalRh:
@@ -81,7 +82,6 @@ for iev,event in enumerate(events):
         # r_thickness     = []
         # r_isHalf        = []
 
-        i = 0
         # hits in each event
         for hit in hits:
             # getting cell information
