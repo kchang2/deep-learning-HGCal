@@ -62,7 +62,7 @@ for iev,event in enumerate(events):
     # get the data, The InputTag can hold the module label and the product instance name. 
     # basically checks to see if data and label are there -- the labels should be unique.
     for i in xrange(2):
-        event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
+        event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHitsLabel[i][3],hgcalHits[i])
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
 
