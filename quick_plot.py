@@ -89,8 +89,8 @@ for iev,event in enumerate(events):
             # getting cell information
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
 
-            topo = ROOT.HGCalGeometry.hgeoHandleEE.topology();
-            dddConst = topo.dddConstants()
+            w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
+            
 
             # numpy
             r_layer.append(hid.layer())
