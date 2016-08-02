@@ -90,7 +90,7 @@ for iev,event in enumerate(events):
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
 
             w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
-            
+
 
             # numpy
             r_layer.append(hid.layer())
@@ -99,12 +99,12 @@ for iev,event in enumerate(events):
 
             r_energy.append(hit.energy())
             # r_time.append(hit.time())
-            r_thickness.append(hid.thickness())
-            r_isHalf.append(hit.isHalf())
+            # r_thickness.append(hid.thickness())
+            # r_isHalf.append(hit.isHalf())
 
             rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
-                r_energy, r_thickness, r_isHalf], \
-                names='layer, wafer, cell, energy, thickness, isHalf')
+                r_energy], \
+                names='layer, wafer, cell, energy')
 
             eventArray.append(rechits_array)
             names += 'rechits'
