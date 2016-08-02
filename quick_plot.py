@@ -79,7 +79,7 @@ for iev,event in enumerate(events):
         r_thickness     = []
         r_isHalf        = []
 
-
+        i = 0
         # hits in each event
         for hit in hits:
             # getting cell information
@@ -105,7 +105,11 @@ for iev,event in enumerate(events):
             eventArray.append(rechits_array)
             names += 'rechits'
             print eventArray
-            exit()
+            i = i+1
+
+            if i == 100:
+                exit()
+
 
         outArray.append(eventArray)
 
