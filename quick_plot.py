@@ -71,13 +71,15 @@ for iev,event in enumerate(events):
         # rechit info
         eventArray = []
         names = ""
+
+        # can sort later using simple recursive method
         r_layer         = []
         r_wafer         = []
         r_cell          = []
         r_energy        = []
         # r_time          = []
-        r_thickness     = []
-        r_isHalf        = []
+        # r_thickness     = []
+        # r_isHalf        = []
 
         i = 0
         # hits in each event
@@ -87,6 +89,8 @@ for iev,event in enumerate(events):
             # w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
 
             print hid.layer(), hid.wafer(), hid.cell(), hit.energy()
+
+
             # numpy
             r_layer.append(hid.layer())
             r_wafer.append(hid.wafer())
@@ -97,19 +101,22 @@ for iev,event in enumerate(events):
             # r_thickness.append(hid.thickness())
             # r_isHalf.append(hit.isHalf())
 
-            rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
-                r_energy], \
-                names='layer, wafer, cell, energy')
-            print rechits_array
+        rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
+            r_energy], \
+            names='layer, wafer, cell, energy')
 
-            eventArray.append(rechits_array)
+
+        print rechits_array
+
+        eventArray.append(rechits_array)
             names += 'rechits'
-            print eventArray
-            i = i+1
 
-            if i == 10:
-                exit()
 
+        print eventArray
+        i = i+1
+
+        if i==2:
+            exit()
 
         outArray.append(eventArray)
 
