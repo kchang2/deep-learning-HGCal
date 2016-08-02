@@ -91,6 +91,8 @@ for iev,event in enumerate(events):
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
             # w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
 
+            print hid.layer(), hid.wafer(), hid.cell(), hit.energy()
+            exit()
             # numpy
             r_layer.append(hid.layer())
             r_wafer.append(hid.wafer())
@@ -112,7 +114,6 @@ for iev,event in enumerate(events):
             rechit_energy.Fill(hit.energy())
 
         outArray.append(eventArray)
-        print outArray 
 
 print 'writing files'
 np.save('rechit.npy', outArray)
