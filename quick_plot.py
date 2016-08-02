@@ -44,8 +44,11 @@ hgcalHits, hgcalHitsLabel = [Handle('edm::SortedCollection<HGCRecHit,edm::Strict
                              Handle('edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >')], ["HGCalRecHit:HGCEERecHits:".split(":"),
                                                                                                                "HGCalRecHit:HGCHEFRecHits:".split(":")]
 
-# cretes output array
+# creates output array
 outArray = []
+# format will be as such:
+# [event][(hit_info1), (hit_info2), ...]
+# [event][(layer1, wafer1, cell1, energy1), (layer2, wafer2, cell2, energy2)]
 
 # clear the terminal
 os.system('clear')
@@ -64,8 +67,6 @@ for iev,event in enumerate(events):
         # print hgcalHits[i]
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
-
-    i = 0
 
     # event in list of events
     for hits in hgcalRh:
@@ -87,9 +88,7 @@ for iev,event in enumerate(events):
             # getting cell information
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
             # w = ROOT.HGCalDDDConstants.waferTypeL(hid.wafer())
-
-            print hid.layer(), hid.wafer(), hid.cell(), hit.energy()
-
+            # print hid.layer(), hid.wafer(), hid.cell(), hit.energy()
 
             # numpy
             r_layer.append(hid.layer())
@@ -104,18 +103,8 @@ for iev,event in enumerate(events):
         rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
             names='layer, wafer, cell, energy')
 
-
-        print rechits_array
-
         eventArray.append(rechits_array)
         names += 'rechits'
-
-
-        print eventArray
-        i = i+1
-
-        if i==2:
-            exit()
 
         outArray.append(eventArray)
 
