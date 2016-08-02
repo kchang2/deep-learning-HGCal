@@ -107,7 +107,7 @@ for iev,event in enumerate(events):
             print eventArray
             i = i+1
 
-            if i == 100:
+            if i == 10:
                 exit()
 
 
