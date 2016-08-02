@@ -108,12 +108,11 @@ for iev,event in enumerate(events):
             eventArray.append(rechits_array)
             names += 'rechits'
 
-
             # histogram for ROOT file
             rechit_energy.Fill(hit.energy())
-            print eventArray
 
         outArray.append(eventArray)
+        print outArray 
 
 print 'writing files'
 np.save('rechit.npy', outArray)
