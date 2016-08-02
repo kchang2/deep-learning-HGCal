@@ -111,7 +111,7 @@ for iev,event in enumerate(events):
 
             # histogram for ROOT file
             rechit_energy.Fill(hit.energy())
-            print evetArray
+            print eventArray
 
         outArray.append(eventArray)
 
