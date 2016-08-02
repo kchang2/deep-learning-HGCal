@@ -50,7 +50,11 @@ out.cd()
 rechit_energy = TH1F('rechit_energy','; RecHit Energy (GeV)',500,0,10)
 
 for iev,event in enumerate(events):
+    # print iev, event  iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
+    print hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i]
+    print event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
+    exit()
     for i in xrange(2):
         event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
 
