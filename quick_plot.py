@@ -101,8 +101,7 @@ for iev,event in enumerate(events):
             # r_thickness.append(hid.thickness())
             # r_isHalf.append(hit.isHalf())
 
-        rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
-            r_energy], \
+        rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
             names='layer, wafer, cell, energy')
 
 
