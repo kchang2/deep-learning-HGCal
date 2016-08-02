@@ -44,11 +44,6 @@ hgcalHits, hgcalHitsLabel = [Handle('edm::SortedCollection<HGCRecHit,edm::Strict
                              Handle('edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >')], ["HGCalRecHit:HGCEERecHits:".split(":"),
                                                                                                                "HGCalRecHit:HGCHEFRecHits:".split(":")]
 
-# create root file
-out = TFile.Open('info.root','recreate')
-out.cd()
-rechit_energy = TH1F('rechit_energy','; RecHit Energy (GeV)',500,0,10)
-
 # cretes output array
 outArray = []
 
@@ -106,20 +101,16 @@ for iev,event in enumerate(events):
                 r_energy], \
                 names='layer, wafer, cell, energy')
             print rechits_array
-            exit()
+
             eventArray.append(rechits_array)
             names += 'rechits'
-
-            # histogram for ROOT file
-            rechit_energy.Fill(hit.energy())
+            print eventArray
+            exit()
 
         outArray.append(eventArray)
 
 print 'writing files'
 np.save('rechit.npy', outArray)
-
-out.Write()
-out.Close()
 
 print 'Process complete.'
     
