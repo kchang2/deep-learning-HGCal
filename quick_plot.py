@@ -52,13 +52,15 @@ rechit_energy = TH1F('rechit_energy','; RecHit Energy (GeV)',500,0,10)
 for iev,event in enumerate(events):
     # print iev, event  iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
-    print hgcalHitsLabel[0][0],hgcalHitsLabel[0][1],hgcalHitsLabel[0][2],hgcalHits[0]
-    print event.getByLabel(hgcalHitsLabel[0][0],hgcalHitsLabel[0][1],hgcalHitsLabel[0][2],hgcalHits[0])
-    exit()
+    # https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEDMGetDataFromEvent#get_ByLabel
+    # get the data, The InputTag can hold the module label and the product instance name. 
+    # basically checks to see if data and label are there -- the labels should be unique.
     for i in xrange(2):
         event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
+    print hgcalRh
+    exit()
 
     for hits in hgcalRh:
         for hit in hits:
