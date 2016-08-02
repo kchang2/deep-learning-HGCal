@@ -79,17 +79,17 @@ for iev,event in enumerate(events):
         r_layer         = []
         r_wafer         = []
         r_cell          = []
-        r_x             = []
-        r_y             = []
-        r_z             = []
-        r_eta           = []
-        r_phi           = []
+        # r_x             = []
+        # r_y             = []
+        # r_z             = []
+        # r_eta           = []
+        # r_phi           = []
         r_energy        = []
-        r_time          = []
+        # r_time          = []
         r_thickness     = []
         r_isHalf        = []
-        r_flags         = []
-        r_cluster2d     = []
+        # r_flags         = []
+        # r_cluster2d     = []
 
         # hits in each event
         for hit in hits:
@@ -104,18 +104,23 @@ for iev,event in enumerate(events):
             r_x.append(hit.x())
             r_y.append(hit.y())
             r_z.append(hit.z())
-            r_eta.append(hit.eta())
-            r_phi.append(hit.phi())
+            # r_eta.append(hit.eta())
+            # r_phi.append(hit.phi())
             r_energy.append(hit.energy())
-            r_time.append(hit.time())
+            # r_time.append(hit.time())
             r_thickness.append(hit.thickness())
             r_isHalf.append(hit.isHalf())
-            r_flags.append(hit.flags())
-            r_cluster2d.append(hit.cluster2d())
+            # r_flags.append(hit.flags())
+            # r_cluster2d.append(hit.cluster2d())
 
-            rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_x, r_y, r_z, \
-                r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
-                names='layer, wafer, cell, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
+            rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, \
+                r_energy, r_thickness, r_isHalf], \
+                names='layer, wafer, cell, energy, thickness, isHalf')
+
+
+            # rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_x, r_y, r_z, \
+            #     r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
+            #     names='layer, wafer, cell, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
             eventArray.append(rechits_array)
             names += 'rechits'
 
