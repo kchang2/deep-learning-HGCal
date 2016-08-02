@@ -108,7 +108,7 @@ for iev,event in enumerate(events):
         print rechits_array
 
         eventArray.append(rechits_array)
-            names += 'rechits'
+        names += 'rechits'
 
 
         print eventArray
