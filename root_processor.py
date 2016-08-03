@@ -116,7 +116,7 @@ for event in outArray_u:
     
     for hit in event:
         if hit['layer'] == 10:
-            cell_array[hit['cell']-1] = hit['energy'] ) # cells index at 1, numpy index at 0
+            cell_array[hit['cell']-1] = hit['energy'] # cells index at 1, numpy index at 0
 
     outArray_f.append(layer_array)
 
