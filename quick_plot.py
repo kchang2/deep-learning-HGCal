@@ -45,13 +45,14 @@ hgcalHits, hgcalHitsLabel = [Handle('edm::SortedCollection<HGCRecHit,edm::Strict
                                                                                                                "HGCalRecHit:HGCHEFRecHits:".split(":")]
 
 # creates output array
-outArray = []
+outArray_u = []
 # format will be as such:
 # [event][(hit_info1), (hit_info2), ...]
 # [event][(layer1, wafer1, cell1, energy1), (layer2, wafer2, cell2, energy2)]
 
 # clear the terminal
 os.system('clear')
+max_lay = 0
 
 for iev,event in enumerate(events):
     # print iev, event  iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
@@ -100,16 +101,28 @@ for iev,event in enumerate(events):
             # r_thickness.append(hid.thickness())
             # r_isHalf.append(hit.isHalf())
 
+            if hid.layer() > max_lay:
+                max_lay = hid.layer()
+
         rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
             names='layer, wafer, cell, energy')
 
         eventArray.append(rechits_array)
         names += 'rechits'
 
-        outArray.append(eventArray)
+        outArray_u.append(eventArray)
+    print 'hello'
 
 print 'writing files'
-np.save('rechit.npy', outArray)
+print max_lay
+np.save('rechit_unformatted.npy', outArray_u)
+
+# outArray_f = []
+
+# for event in xrange(outArray_u):
+#     layer_array = []
+#     for 
+
 
 print 'Process complete.'
     
