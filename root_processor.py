@@ -58,6 +58,7 @@ os.system('clear')
 #### STORE UNFILTERED ARRAY ####
 max_wafer = 0
 max_cell = 0
+
 for iev,event in enumerate(events): # iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
     # https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEDMGetDataFromEvent#get_ByLabel
@@ -88,7 +89,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_cell.append(hid.cell())
             r_energy.append(hit.energy())
 
-            if hid.layer() == 10 and hid.wafer() > max_wafer:
+            if hid.wafer() > max_wafer:
                 max_wafer = hid.wafer()
             if hid.layer() == 10 and hid.cell() > max_cell:
                 max_cell = hid.cell()
@@ -117,8 +118,9 @@ np.save('rechit_unformatted.npy', outArray_u)
 outArray_f = []
 
 for event in outArray_u:
-    # layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal, 239 wafers is total number of cell in full wafer
-    cell_array =[0 for i in range(0,239)] #239 wafers in layer 10 full wafer
+    # layer_array = [[] for i in range(0, 28)]  # 28 layers is total number of layers in HGCal, 
+    wafer_array = [[] for i in range(0,461)]    # 461 wafers in layer 10 of HGCal
+    cell_array =[0 for i in range(0,239)]       # 239 cells in layer 10 full wafer
     
     for hit in event:
         if hit['layer'] == 10:
