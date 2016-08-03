@@ -44,14 +44,18 @@ hgcalHits, hgcalHitsLabel = [Handle('edm::SortedCollection<HGCRecHit,edm::Strict
                              Handle('edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >')], ["HGCalRecHit:HGCEERecHits:".split(":"),
                                                                                                                "HGCalRecHit:HGCHEFRecHits:".split(":")]
 
-# creates output array
-outArray_u = []
-# format will be as such:
+# unfilted array format will be as such:
 # [event][(hit_info1), (hit_info2), ...]
 # [event][(layer1, wafer1, cell1, energy1), (layer2, wafer2, cell2, energy2)]
+outArray_u = []
+
 
 # clear the terminal
 os.system('clear')
+
+
+
+#### STORE UNFILTERED ARRAY ####
 
 for iev,event in enumerate(events): # iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
@@ -62,7 +66,6 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
         event.getByLabel(hgcalHitsLabel[i][0],hgcalHitsLabel[i][1],hgcalHitsLabel[i][2],hgcalHits[i])
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
-
 
 
     # rechit info
@@ -94,18 +97,18 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
     outArray_u.append(eventArray)
 
-    print outArray_u
-    exit()
-    print 'hello'
-
 print 'writing files'
 np.save('rechit_unformatted.npy', outArray_u)
 
-# outArray_f = [] #28 layers
+
+
+# #### STORE FILTED ARRAY ####
+# outArray_f = []
 
 # for event in xrange(outArray_u):
-#     layer_array = []
-#     for 
+#     layer_array = [[] for i in range(0, 28)] #28 layers is total number of layers in HGCal
+#     for hit in event:
+#         if hit[]
 
 
 print 'Process complete.'
