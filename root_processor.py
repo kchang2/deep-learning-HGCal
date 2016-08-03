@@ -5,7 +5,7 @@
 # and saves them in a root file.
 #
 # Replaces the .py file created from the RecoNtuple directory
-#
+# Has to run on CMS environment (cmsenv)
 #
 # Backbone written by Lindsey Gray
 # =============================================================================
@@ -76,7 +76,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
     r_cell          = []
     r_energy        = []
 
-
+    max_wafer = 0
     for hits in hgcalRh:         # event in list of events
         for hit in hits:         # hits in each event
             # getting cell information
@@ -86,12 +86,13 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_layer.append(hid.layer())
             r_wafer.append(hid.wafer())
             r_cell.append(hid.cell())
-
+            if hid.wafer() > max_wafer:
+                max_wafer = hid.wafer()
             r_energy.append(hit.energy())
-            
+    print max_wafer        
     rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
         names='layer, wafer, cell, energy')
- 
+    
     # only needed if adding other attributes outside of rechits
     # eventArray.append(rechits_array)
     # names += 'rechits'
