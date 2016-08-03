@@ -69,8 +69,8 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
 
     # rechit info
-    eventArray = []
-    names = ""
+    # eventArray = []
+    # names = ""
     r_layer         = [] # can sort later using recursive approach
     r_wafer         = []
     r_cell          = []
@@ -91,25 +91,32 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             
     rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
         names='layer, wafer, cell, energy')
+ 
+    # only needed if adding other attributes outside of rechits
+    # eventArray.append(rechits_array)
+    # names += 'rechits'
+    # outArray_u.append(eventArray)
 
-    eventArray.append(rechits_array)
-    names += 'rechits'
+    outArray_u.append(rechits_array)
 
-    outArray_u.append(eventArray)
-
-print 'writing files'
+print 'writing unfiltered file rechit_unformatted.npy'
 np.save('rechit_unformatted.npy', outArray_u)
 
 
 
 # #### STORE FILTED ARRAY ####
-# outArray_f = []
+outArray_f = []
 
-# for event in xrange(outArray_u):
-#     layer_array = [[] for i in range(0, 28)] #28 layers is total number of layers in HGCal
-#     for hit in event:
-#         if hit[]
+for event in xrange(outArray_u):
+    layer_array = [[] for i in range(0, 28)] #28 layers is total number of layers in HGCal
+    
+    for hit in event:
+        layer_array[hit['layer']].append( [hit['cell'], hit['energy']] )
 
+    outArray_f.append(layer_array)
+
+print 'writing filtered file rechit_formatted.npy'
+np.save('rechit_formatted.npy', outArray_f)
 
 print 'Process complete.'
     
