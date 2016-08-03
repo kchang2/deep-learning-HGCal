@@ -52,7 +52,6 @@ outArray_u = []
 
 # clear the terminal
 os.system('clear')
-max_lay = 0
 
 for iev,event in enumerate(events):
     # print iev, event  iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
@@ -111,13 +110,13 @@ for iev,event in enumerate(events):
         names += 'rechits'
 
         outArray_u.append(eventArray)
+        print "hits"
     print 'hello'
 
 print 'writing files'
-print max_lay
 np.save('rechit_unformatted.npy', outArray_u)
 
-# outArray_f = []
+# outArray_f = [] #28 layers
 
 # for event in xrange(outArray_u):
 #     layer_array = []
