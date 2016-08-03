@@ -108,21 +108,21 @@ np.save('rechit_unformatted.npy', outArray_u)
 #### STORE FILTED ARRAY ####
 # For now, we only extract layer 10
 
-# outArray_f = []
+outArray_f = []
 
-# for event in outArray_u:
-#     # layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal, 239 wafers is total number of cell in full wafer
-#     cell_array =[[i,0] for i in range(0,236)] #236 wafers in layer 10 full wafer
+for event in outArray_u:
+    # layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal, 239 wafers is total number of cell in full wafer
+    cell_array =[0 for i in range(0,236)] #236 wafers in layer 10 full wafer
     
-#     for hit in event:
-#         layer_array[hit['layer']-1].append( [hit['cell'], hit['energy']] ) # layers index at 1, numpy index at 0
+    for hit in event:
+        if hit['layer'] == 10:
+            cell_array[hit['cell']-1] = hit['energy'] ) # cells index at 1, numpy index at 0
 
-#     outArray_f.append(layer_array)
-#     for 
+    outArray_f.append(layer_array)
 
-# print 'writing filtered file rechit_formatted.npy'
-# np.save('rechit_formatted.npy', outArray_f)
+print 'writing filtered file rechit_formatted.npy'
+np.save('rechit_formatted.npy', outArray_f)
 
-# print 'Process complete.'
+print 'Process complete.'
     
             
