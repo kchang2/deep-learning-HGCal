@@ -135,6 +135,7 @@ for event in outArray_u:
 
 # removes extra dimension
 outArray_f = np.squeeze(outArray_f)
+outArray_f = np.squeeze(outArray_f)
 
 print 'writing filtered file rechit_formatted.npy'
 np.save('rechit_formatted.npy', outArray_f)
