@@ -86,7 +86,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_layer.append(hid.layer())
             r_wafer.append(hid.wafer())
             r_cell.append(hid.cell())
-            if hid.cell() > max_cell:
+            if hid.cell() > max_cell and hid.layer() == 10:
                 max_cell = hid.cell()
             r_energy.append(hit.energy())
     print max_cell       
@@ -105,20 +105,23 @@ np.save('rechit_unformatted.npy', outArray_u)
 
 
 
-# #### STORE FILTED ARRAY ####
-outArray_f = []
+#### STORE FILTED ARRAY ####
+# For now, we only extract layer 10
 
-for event in outArray_u:
-    layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal
+# outArray_f = []
+
+# for event in outArray_u:
+#     layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal, 239 wafers is total number of cell in full wafer
     
-    for hit in event:
-        layer_array[hit['layer']-1].append( [hit['cell'], hit['energy']] ) # layers index at 1, numpy index at 0
+#     for hit in event:
+#         layer_array[hit['layer']-1].append( [hit['cell'], hit['energy']] ) # layers index at 1, numpy index at 0
 
-    outArray_f.append(layer_array)
+#     outArray_f.append(layer_array)
+#     for 
 
-print 'writing filtered file rechit_formatted.npy'
-np.save('rechit_formatted.npy', outArray_f)
+# print 'writing filtered file rechit_formatted.npy'
+# np.save('rechit_formatted.npy', outArray_f)
 
-print 'Process complete.'
+# print 'Process complete.'
     
             
