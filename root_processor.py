@@ -63,20 +63,19 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
     hgcalRh  = [hgcalHits[0].product(),hgcalHits[1].product()]
 
-    # event in list of events
-    for hits in hgcalRh:
-        # rechit info
-        eventArray = []
-        names = ""
 
-        # can sort later using simple recursive method
-        r_layer         = []
-        r_wafer         = []
-        r_cell          = []
-        r_energy        = []
 
-        # hits in each event
-        for hit in hits:
+    # rechit info
+    eventArray = []
+    names = ""
+    r_layer         = [] # can sort later using recursive approach
+    r_wafer         = []
+    r_cell          = []
+    r_energy        = []
+
+
+    for hits in hgcalRh:         # event in list of events
+        for hit in hits:         # hits in each event
             # getting cell information
             hid = ROOT.HGCalDetId(hit.id())     #print hid.subdetId(), hid.layer(), hid.wafer(), hid.cell()
             
@@ -87,13 +86,13 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
             r_energy.append(hit.energy())
             
-        rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
-            names='layer, wafer, cell, energy')
+    rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
+        names='layer, wafer, cell, energy')
 
-        eventArray.append(rechits_array)
-        names += 'rechits'
+    eventArray.append(rechits_array)
+    names += 'rechits'
 
-        outArray_u.append(eventArray)
+    outArray_u.append(eventArray)
 
     print outArray_u
     exit()
