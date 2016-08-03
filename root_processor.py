@@ -89,7 +89,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_cell.append(hid.cell())
             r_energy.append(hit.energy())
 
-            if hid.wafer() > max_wafer:
+            if hid.layer() == 28 and hid.wafer() > max_wafer:
                 max_wafer = hid.wafer()
             if hid.layer() == 10 and hid.cell() > max_cell:
                 max_cell = hid.cell()
