@@ -56,7 +56,8 @@ os.system('clear')
 
 
 #### STORE UNFILTERED ARRAY ####
-
+max_wafer = 0
+max_cell = 0
 for iev,event in enumerate(events): # iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
     # https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideEDMGetDataFromEvent#get_ByLabel
@@ -86,6 +87,12 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_wafer.append(hid.wafer())
             r_cell.append(hid.cell())
             r_energy.append(hit.energy())
+
+            if hit.layer() == 10 and hit.wafer() > max_wafer:
+                max_wafer = hit.wafer()
+            if hit.layer() == 10 and hit.cell() > max_cell:
+                max_cell = hit.cell()
+
     rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
         names='layer, wafer, cell, energy')
     
@@ -95,6 +102,9 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
     # outArray_u.append(eventArray)
 
     outArray_u.append(rechits_array)
+
+print "max wafer: %i, max cell: %i" %(max_wafer, max_cell)
+exit()
 
 print 'writing unfiltered file rechit_unformatted.npy'
 np.save('rechit_unformatted.npy', outArray_u)
