@@ -88,9 +88,9 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_cell.append(hid.cell())
             r_energy.append(hit.energy())
 
-            if hit.layer() == 10 and hit.wafer() > max_wafer:
+            if hid.layer() == 10 and hid.wafer() > max_wafer:
                 max_wafer = hit.wafer()
-            if hit.layer() == 10 and hit.cell() > max_cell:
+            if hid.layer() == 10 and hid.cell() > max_cell:
                 max_cell = hit.cell()
 
     rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
