@@ -107,7 +107,7 @@ np.save('rechit_unformatted.npy', outArray_u)
 # #### STORE FILTED ARRAY ####
 outArray_f = []
 
-for event in xrange(outArray_u):
+for event in outArray_u:
     layer_array = [[] for i in range(0, 28)] #28 layers is total number of layers in HGCal
     
     for hit in event:
