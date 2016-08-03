@@ -108,10 +108,10 @@ np.save('rechit_unformatted.npy', outArray_u)
 outArray_f = []
 
 for event in outArray_u:
-    layer_array = [[] for i in range(0, 28)] #28 layers is total number of layers in HGCal
+    layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal
     
     for hit in event:
-        layer_array[hit['layer']].append( [hit['cell'], hit['energy']] )
+        layer_array[hit['layer']-1].append( [hit['cell'], hit['energy']] ) # layers index at 1, numpy index at 0
 
     outArray_f.append(layer_array)
 
