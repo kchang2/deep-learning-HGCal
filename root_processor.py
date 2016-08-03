@@ -108,7 +108,7 @@ outArray_f = []
 
 for event in outArray_u:
     # layer_array = [[] for i in range(0, 28)] # 28 layers is total number of layers in HGCal, 239 wafers is total number of cell in full wafer
-    cell_array =[0 for i in range(0,236)] #236 wafers in layer 10 full wafer
+    cell_array =[0 for i in range(0,239)] #239 wafers in layer 10 full wafer
     
     for hit in event:
         if hit['layer'] == 10:
