@@ -10,6 +10,8 @@
 # Backbone written by Lindsey Gray
 # =============================================================================
 
+# max wafer: 462, max cell: 236 (for all layers)
+# max wafer: 461, max cell: 235 (for layer 10 recorded data)
 
 
 #! /usr/bin/env python
@@ -56,8 +58,8 @@ os.system('clear')
 
 
 #### STORE UNFILTERED ARRAY ####
-max_wafer = 0
-max_cell = 0
+# max_wafer = 0
+# max_cell = 0
 
 for iev,event in enumerate(events): # iev = index of event, event = specific event (xNN -> ie. x40 means 40 events)
 
@@ -89,10 +91,10 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
             r_cell.append(hid.cell())
             r_energy.append(hit.energy())
 
-            if hid.layer() == 28 and hid.wafer() > max_wafer:
-                max_wafer = hid.wafer()
-            if hid.layer() == 10 and hid.cell() > max_cell:
-                max_cell = hid.cell()
+            # if hid.layer() == 10 and hid.wafer() > max_wafer:
+            #     max_wafer = hid.wafer()
+            # if hid.layer() == 10 and hid.cell() > max_cell:
+            #     max_cell = hid.cell()
 
     rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_energy], \
         names='layer, wafer, cell, energy')
@@ -104,8 +106,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
     outArray_u.append(rechits_array)
 
-print "max wafer: %i, max cell: %i" %(max_wafer, max_cell)
-exit()
+# print "max wafer: %i, max cell: %i" %(max_wafer, max_cell)
 
 print 'writing unfiltered file rechit_unformatted.npy'
 np.save('rechit_unformatted.npy', outArray_u)
@@ -114,6 +115,7 @@ np.save('rechit_unformatted.npy', outArray_u)
 
 #### STORE FILTED ARRAY ####
 # For now, we only extract layer 10
+from copy import deepcopy
 
 outArray_f = []
 
@@ -121,12 +123,18 @@ for event in outArray_u:
     # layer_array = [[] for i in range(0, 28)]  # 28 layers is total number of layers in HGCal, 
     wafer_array = [[] for i in range(0,461)]    # 461 wafers in layer 10 of HGCal
     cell_array =[0 for i in range(0,239)]       # 239 cells in layer 10 full wafer
+
+    for i in xrange(0,461):
+        wafer_array[i] = deepcopy(cell_array)
     
     for hit in event:
         if hit['layer'] == 10:
-            cell_array[hit['cell']-1] = hit['energy'] # cells index at 1, numpy index at 0
+            wafer_array[hit['wafer']-1][hit['cell']-1] = hit['energy'] # wafer/cells index at 1, numpy index at 0
 
-    outArray_f.append(cell_array)
+    outArray_f.append(wafer_array)
+
+# removes extra dimension
+outArray_f = np.squeeze(outArray_f)
 
 print 'writing filtered file rechit_formatted.npy'
 np.save('rechit_formatted.npy', outArray_f)
