@@ -97,7 +97,6 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
     print outArray_u
     exit()
-        print "hits"
     print 'hello'
 
 print 'writing files'
