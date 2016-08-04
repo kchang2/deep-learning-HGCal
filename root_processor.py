@@ -138,8 +138,8 @@ print 'writing structurally organized file rechit_organized.npy'
 np.save('rechit_organized.npy', outArray_o)
 
 # removes all event, wafer distinction
-for event_i in xrange(0,outArray_o.shape[0]):
-    for wafer_i in xrange(0,outArray_o.shape[1]):
+for event_i in xrange(0,len(outArray_o)):
+    for wafer_i in xrange(0,len(outArray_o[0])):
         outArray_f.append(outArray_o[event_i][wafer_i])
 
 print 'writing filtered file rechit_formatted.npy'
