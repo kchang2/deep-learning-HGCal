@@ -134,19 +134,16 @@ for event in outArray_u:
 
     outArray_o.append(wafer_array)
 
-# # removes extra dimension
-# outArray_o = np.squeeze(outArray_o)
-
 print 'writing structurally organized file rechit_organized.npy'
 np.save('rechit_organized.npy', outArray_o)
 
-# # removes all event distinction
-# for i in range :
-#     for wafer in outArray_o:
-#         outArray_f.append(wafer)
+# removes all event, wafer distinction
+for event_i in xrange(0,outArray_o.shape[0]):
+    for wafer_i in xrange(0,outArray_o.shape[1]):
+        outArray_f.append(outArray_o[event_i][wafer_i])
 
-# print 'writing filtered file rechit_formatted.npy'
-# np.save('rechit_formatted.npy', outArray_f)
+print 'writing filtered file rechit_formatted.npy'
+np.save('rechit_formatted.npy', outArray_f)
 
 print 'Process complete.'
     
