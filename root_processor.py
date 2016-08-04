@@ -118,6 +118,7 @@ np.save('rechit_unformatted.npy', outArray_u)
 from copy import deepcopy
 
 outArray_f = []
+outArray_o = []
 
 for event in outArray_u:
     # layer_array = [[] for i in range(0, 28)]  # 28 layers is total number of layers in HGCal, 
@@ -131,10 +132,18 @@ for event in outArray_u:
         if hit['layer'] == 10:
             wafer_array[hit['wafer']-1][hit['cell']-1] = hit['energy'] # wafer/cells index at 1, numpy index at 0
 
-    outArray_f.append(wafer_array)
+    outArray_o.append(wafer_array)
 
 # removes extra dimension
-outArray_f = np.squeeze(outArray_f)
+outArray_o = np.squeeze(outArray_o)
+
+print 'writing structurally organized file rechit_organized.npy'
+np.save('rechit_organized.npy', outArray_o)
+
+# removes all event distinction
+for event in outArray_o:
+    for wafer in outArray_o:
+        outArray_f.append(wafer)
 
 print 'writing filtered file rechit_formatted.npy'
 np.save('rechit_formatted.npy', outArray_f)
