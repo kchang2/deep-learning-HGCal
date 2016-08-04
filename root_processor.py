@@ -145,6 +145,9 @@ for event in outArray_o:
     for wafer in outArray_o:
         outArray_f.append(wafer)
 
+# removes extra dimension
+outArray_f = np.squeeze(outArray_f)
+
 print 'writing filtered file rechit_formatted.npy'
 np.save('rechit_formatted.npy', outArray_f)
 
