@@ -140,7 +140,13 @@ np.save('rechit_organized.npy', outArray_o)
 # removes all event, wafer distinction
 for event_i in xrange(0,len(outArray_o)):
     for wafer_i in xrange(0,len(outArray_o[0])):
-        outArray_f.append(outArray_o[event_i][wafer_i])
+
+        # if no noise -- remove from set
+        if all(cell == 0 for cell in outArray_o[event_i][wafer_i]):
+            continue
+        else:
+            outArray_f.append(outArray_o[event_i][wafer_i])
+
 
 print 'writing filtered file rechit_formatted.npy'
 np.save('rechit_formatted.npy', outArray_f)
