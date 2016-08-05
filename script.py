@@ -36,7 +36,7 @@ for line in lines:
 	f.close()
 
 	# runs the root processor
-	os.system('python root_processory.py')
+	os.system('python root_processor.py')
 
 	# return to original format
 	f = open('root_processor.py', 'w')
