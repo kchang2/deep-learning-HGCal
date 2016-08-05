@@ -108,7 +108,7 @@ for iev,event in enumerate(events): # iev = index of event, event = specific eve
 
 # print "max wafer: %i, max cell: %i" %(max_wafer, max_cell)
 
-print 'writing unfiltered file rechit_unformatted.npy'
+print 'writing unfiltered file rechit_unformatted'
 np.save('rechit_unformatted.npy', outArray_u)
 
 
@@ -134,7 +134,7 @@ for event in outArray_u:
 
     outArray_o.append(wafer_array)
 
-print 'writing structurally organized file rechit_organized.npy'
+print 'writing structurally organized file rechit_organized'
 np.save('rechit_organized.npy', outArray_o)
 
 # removes all event, wafer distinction
@@ -148,7 +148,7 @@ for event_i in xrange(0,len(outArray_o)):
             outArray_f.append(outArray_o[event_i][wafer_i])
 
 
-print 'writing filtered file rechit_formatted.npy'
+print 'writing filtered file rechit_formatted'
 np.save('rechit_formatted.npy', outArray_f)
 
 print 'Process complete.'
