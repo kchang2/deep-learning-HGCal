@@ -1,3 +1,14 @@
+# Kai Chang - Caltech CMS-CERN 2016
+#
+# Program runs the denoising autoencoder developed.
+# Backbone from Tensorflow documentation vizualized
+# - https://github.com/blackecho/Deep-Learning-TensorFlow
+#
+#
+# Needs to have TensorFlow, numpy, yadlt installed on computer.
+# =============================================================================
+
+
 import tensorflow as tf
 import numpy as np
 import os

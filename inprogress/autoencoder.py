@@ -20,7 +20,9 @@ sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
 import config
 import utils
 
-class DenoisingAutoencoder(object):
+from yadlt.core.unsupervised_model import UnsupervisedModel
+
+class DenoisingAutoencoder(UnsupervisedModel):
 	''' Implementation of Denoising Autoencoder using TensorFlow
 	The interface of the class is similar to sklearn
 	'''
@@ -42,8 +44,10 @@ class DenoisingAutoencoder(object):
 				corr_type='none',
 				corr_frac=0,
 				verbose=1,
-				seed=-1
-				):
+				seed=-1,
+				regtype='none',
+				l2reg=5e-4,
+				models_dir='models/', data_dir='data/', summary_dir='logs/'):
 		'''
 		Parameters
 		----------
@@ -92,12 +96,24 @@ class DenoisingAutoencoder(object):
 		self.verbose = verbose
 		self.seed = seed
 
+		self.models_dir = models_dir
+		self.data_dir = data_dir
+		self.tf_summary_dir = summary_dir
+		self.model_path = self.models_dir + self.model_name
+
+
 		if self.seed >= 0:
 			np.random.seed(self.seed)
 			tf.set_random_seed(self.seed)
 
-		self.models_dir, self.data_dir, self.tf_summary_dir = self._create_data_directories()
-		self.model_path = self.models_dir + self.model_name
+		UnsupervisedModel.__init__(self, model_name, main_dir, models_dir, data_dir, summary_dir)
+
+		# self.models_dir, self.data_dir, self.tf_summary_dir = self._create_data_directories()
+		# self.model_path = self.models_dir + self.model_name
+
+		self._initialize_training_parameters(loss_func=loss_func, learning_rate=learning_rate, opt=opt,
+											num_epochs=num_epochs, batch_size=batch_size, dataset=dataset,
+											momentum=momentum, regtype=regtype, l2reg=l2reg)
 
 		self.input_data = None
 		self.input_data_corr = None
@@ -277,7 +293,10 @@ class DenoisingAutoencoder(object):
 		self._create_encode_layer()
 		self._create_decode_layer()
 
-		self._create_cost_function_node()
+		var = [self.W_, self.bh_, self.bv_]
+		regterm = self.compute_regularization(var)
+
+		self._create_cost_function_node(self.reconstruction, self.input_data, regterm=regterm)
 		self._create_train_step_node()
 
 
@@ -355,7 +374,7 @@ class DenoisingAutoencoder(object):
 
 
 
-	def _create_cost_function_node(self):
+	def _create_cost_function_node(self, reconstruction, input_data, regterm):
 		''' create teh cost function node of the network
 
 		Returns
