@@ -32,6 +32,7 @@ class DenoisingAutoencoder(object):
 				enc_act_func='tanh',
 				dec_act_func='none', 
 				loss_func='mean_squared',
+				calc_acc=False,
 				num_epochs=10,
 				batch_size=10,
 				dataset='neutrinos',
@@ -53,6 +54,7 @@ class DenoisingAutoencoder(object):
 		enc_act_func 		: activation function for the encoder (ie. tanh, sigmoid)
 		dec_act_function 	: activation function for the decoder (ie. tanh, sigmoid, none)
 		loss_func 			: loss function (ie. mean_squared, cross_entropy) used to measure degree of fit
+		accuracy 			: accuracy of our reconstructed results
 		num_epochs 			: number of epoch or how many revolutions / cycles
 		batch_size 			: size of each mini-batch or samples inputed at any given time
 		dataset 			: optional name for the dataset
@@ -80,6 +82,7 @@ class DenoisingAutoencoder(object):
 		self.enc_act_func = enc_act_func
 		self.dec_act_func = dec_act_func
 		self.loss_func = loss_func
+		self.calc_acc = calc_acc
 		self.num_epochs = num_epochs
 		self.batch_size = batch_size
 		self.dataset = dataset
@@ -111,6 +114,7 @@ class DenoisingAutoencoder(object):
 
 		self.train_step = None
 		self.cost = None
+		self.accuracy = None
 
 		self.tf_session = None
 		self.tf_merged_summaries = None
@@ -159,7 +163,8 @@ class DenoisingAutoencoder(object):
 			self.tf_saver.restore(self.tf_session, self.model_path)
 
 		self.tf_summary_writer = tf.train.SummaryWriter(self.tf_summary_dir, self.tf_session.graph)
-
+		# train_writer = tf.train.SummaryWriter(self.tf_summary_dir + '/train', self.tf_session.graph)
+		# test_writer = tf.train.SummaryWriter(self.tf_summary_dir + '/test', self.tf_session.graph)
 
 	def _train_model(self, train_set, validation_set):
 		''' Trains the model
@@ -248,7 +253,7 @@ class DenoisingAutoencoder(object):
 		summary_str = result[0]
 		err = result[1]
 
-		self.tf_summary_writer.add_summary(summary_str, epoch)
+		self.tf_summary_writer.add_summary(summary_str, epoch) # records all info from summary at point epoch
 		self.tf_summary_writer.flush()
 		
 		if self.verbose == 1:
@@ -279,6 +284,10 @@ class DenoisingAutoencoder(object):
 
 		self._create_cost_function_node()
 		self._create_train_step_node()
+		self._create_accuracy_node()
+		self._create_variable_node(self.W_, 'weight')
+		self._create_variable_node(self.bh_, 'hidden bias')
+		self._create_variable_node(self.bv_, 'visible bias')
 
 
 	def _create_placeholders(self, n_features):
@@ -343,20 +352,25 @@ class DenoisingAutoencoder(object):
 		with tf.name_scope('Wg_y_bv'):
 			if self.dec_act_func == 'sigmoid':
 				self.decode = tf.nn.sigmoid(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
+				_ = tf.histogram_summary('decoding layer -- matmul sigmoid', self.decode)
+
 
 			elif self.dec_act_func == 'tanh':
 				self.decode = tf.nn.tanh(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
+				_ = tf.histogram_summary('decoding layer -- matmul tanh', self.decode)
+
 
 			elif self.dec_act_func == 'none':
 				self.decode = tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_
+				_ = tf.histogram_summary('decoding layer -- matmul', self.decode)
+
 
 			else:
 				self.decode = None
 
 
-
 	def _create_cost_function_node(self):
-		''' create teh cost function node of the network
+		''' create the cost function node of the network
 
 		Returns
 		-------
@@ -376,8 +390,39 @@ class DenoisingAutoencoder(object):
 				self.cost = None
 
 
+	def _create_accuracy_node(self):
+		''' create the accuracy node of the network
+
+		Returns
+		-------
+		self
+		'''
+		with tf.name_scope('accuracy'):
+			if self.accuracy:
+				correct_prediction = tf.equal(tf.argmax(self.decode, 1), tf.argmax(self.input_data,1))
+				accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+				_ =  tf.scalar_summary('accuracy', accuracy)
+			else:
+				self.accuracy = None
+
+
+	def _create_variable_node(self, var, name):
+		''' creates the summary variables to a Tensor.
+		'''
+		with tf.name_scope('summaries'):
+			mean = tf.reduce_mean(var)
+			_ = tf.scalar_summary('mean/' + name, mean)
+			with tf.name_scope('stddev'):
+				stddev = tf.sqrt(tf.reduce_sum(tf.square(var - mean)))
+
+			_ = tf.scalar_summary('stddev/' + name, stddev)
+			_ = tf.scalar_summary('max/' + name, tf.reduce_max(var))
+			_ = tf.scalar_summary('min/' + name, tf.reduce_min(var))
+			_ = tf.histogram_summary(name, var)
+
+
 	def _create_train_step_node(self):
-		''' Create teh training step node of the network.
+		''' Create the training step node of the network.
 
 		Returns
 		-------

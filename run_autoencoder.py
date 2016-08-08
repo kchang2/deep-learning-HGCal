@@ -53,19 +53,20 @@ flags.DEFINE_string('v_bias', None, 'Path to a numpy array containing the decode
 flags.DEFINE_integer('n_components', 256, 'Number of hidden units in the dae.')
 flags.DEFINE_float('l2reg', 5e-4, 'Regularization parameter. If 0, no regularization.')
 flags.DEFINE_string('corr_type', 'masking', 'Type of input corruption. ["none", "masking", "salt_and_pepper"]')
-flags.DEFINE_float('corr_frac', 0.0, 'Fraction of the input to corrupt.')
+flags.DEFINE_float('corr_frac', 0, 'Fraction of the input to corrupt.')
 flags.DEFINE_integer('xavier_init', 1, 'Value for the constant in xavier weights initialization.')
 flags.DEFINE_string('enc_act_func', 'tanh', 'Activation function for the encoder. ["sigmoid", "tanh"]')
 flags.DEFINE_string('dec_act_func', 'none', 'Activation function for the decoder. ["sigmoid", "tanh", "none"]')
 flags.DEFINE_string('main_dir', 'dae/', 'Directory to store data relative to the algorithm.')
 flags.DEFINE_string('loss_func', 'mean_squared', 'Loss function. ["mean_squared" or "cross_entropy"]')
+flags.DEFINE_boolean('calc_acc', True, 'Display accuracy of learning.')
 flags.DEFINE_integer('verbose', 1, 'Level of verbosity. 0 - silent, 1 - print accuracy.')
 flags.DEFINE_integer('weight_images', 10, 'Number of weight images to generate.')
 flags.DEFINE_string('opt', 'gradient_descent', '["gradient_descent", "ada_grad", "momentum", "adam"]')
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_float('momentum', 0.5, 'Momentum parameter.')
-flags.DEFINE_integer('num_epochs', 20, 'Number of epochs.')
-flags.DEFINE_integer('batch_size', 20, 'Size of each mini-batch.')
+flags.DEFINE_float('momentum', 0.9, 'Momentum parameter.')
+flags.DEFINE_integer('num_epochs', 10, 'Number of epochs.')
+flags.DEFINE_integer('batch_size', 25, 'Size of each mini-batch.')
 
 
 assert FLAGS.dataset in ['mnist','cifar10','neutrinos','custom']
@@ -110,7 +111,8 @@ if __name__ == '__main__':
 		else:
 			trX = load_from_np(FLAGS.train_dataset)
 	
-		vlX = load_from_np(FLAGS.valid_dataset)
+		half = trX.shape[0] / 2
+		vlX = trX[:half] # Validation set is the first half of the test set
 		teX = load_from_np(FLAGS.test_dataset)
 
 	# custom
@@ -145,6 +147,7 @@ if __name__ == '__main__':
 		corr_frac=FLAGS.corr_frac, 
 		dataset=FLAGS.dataset,
 		loss_func=FLAGS.loss_func,
+		calc_acc=FLAGS.calc_acc,
 		main_dir=FLAGS.main_dir, 
 		opt=FLAGS.opt,
 		learning_rate=FLAGS.learning_rate, 
