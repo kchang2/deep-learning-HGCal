@@ -54,6 +54,7 @@ class DenoisingAutoencoder(object):
 		enc_act_func 		: activation function for the encoder (ie. tanh, sigmoid)
 		dec_act_function 	: activation function for the decoder (ie. tanh, sigmoid, none)
 		loss_func 			: loss function (ie. mean_squared, cross_entropy) used to measure degree of fit
+		calc_acc			: whether or not to print the accuracy of our reconstructed results
 		accuracy 			: accuracy of our reconstructed results
 		num_epochs 			: number of epoch or how many revolutions / cycles
 		batch_size 			: size of each mini-batch or samples inputed at any given time
@@ -323,7 +324,8 @@ class DenoisingAutoencoder(object):
 
 
 	def _create_encode_layer(self):
-		''' Create teh encoding alyer of the network
+		''' Create the encoding alyer of the network. 
+			The encoded layer is the encoded representation of the input
 
 		Returns
 		-------
@@ -343,6 +345,7 @@ class DenoisingAutoencoder(object):
 
 	def _create_decode_layer(self):
 		''' Create the decoding layer of the network.
+			The decoded is the lossy reconstruction of the input
 
 		Returns
 		-------
@@ -352,17 +355,17 @@ class DenoisingAutoencoder(object):
 		with tf.name_scope('Wg_y_bv'):
 			if self.dec_act_func == 'sigmoid':
 				self.decode = tf.nn.sigmoid(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
-				_ = tf.histogram_summary('decoding layer -- matmul sigmoid', self.decode)
+				_ = tf.histogram_summary('decoding layer -- sigmoid', self.decode)
 
 
 			elif self.dec_act_func == 'tanh':
 				self.decode = tf.nn.tanh(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
-				_ = tf.histogram_summary('decoding layer -- matmul tanh', self.decode)
+				_ = tf.histogram_summary('decoding layer -- tanh', self.decode)
 
 
 			elif self.dec_act_func == 'none':
 				self.decode = tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_
-				_ = tf.histogram_summary('decoding layer -- matmul', self.decode)
+				_ = tf.histogram_summary('decoding layer -- None', self.decode)
 
 
 			else:
@@ -380,11 +383,11 @@ class DenoisingAutoencoder(object):
 		with tf.name_scope('cost'):
 			if self.loss_func == 'cross_entropy':
 				self.cost = -tf.reduce_sum(self.input_data * tf.log(self.decode))
-				_ = tf.scalar_summary("cross_entropy", self.cost)
+				_ = tf.scalar_summary("cross entropy", self.cost)
 
 			elif self.loss_func == 'mean_squared':
 				self.cost = tf.sqrt(tf.reduce_mean(tf.square(self.input_data - self.decode)))
-				_ = tf.scalar_summary("mean_squared", self.cost)
+				_ = tf.scalar_summary("mean squared", self.cost)
 
 			else:
 				self.cost = None
@@ -398,9 +401,11 @@ class DenoisingAutoencoder(object):
 		self
 		'''
 		with tf.name_scope('accuracy'):
-			if self.accuracy:
-				correct_prediction = tf.equal(tf.argmax(self.decode, 1), tf.argmax(self.input_data,1))
-				accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+			if self.calc_acc:
+				with tf.name_scope('correct_prediction'):
+					correct_prediction = tf.equal(tf.argmax(self.decode, 1), tf.argmax(self.input_data, 1))
+				with tf.name_scope('accuracy'):
+					accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 				_ =  tf.scalar_summary('accuracy', accuracy)
 			else:
 				self.accuracy = None
