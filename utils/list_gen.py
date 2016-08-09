@@ -45,6 +45,7 @@ if __name__ == "__main__":
 	pt = 'Pt' + str(args.pt)
 	pdg_list = {'11':'electron', '12': 'e_neutrino', '13': 'muon' , '22': 'photon', '111': 'n_pion', '211': 'c_pion'}
 	pname = pdg_list[str(args.pdg)]
+	# matching = [s for s in some_list if "abc" in s]
 
 
 	# gather directory locations into list

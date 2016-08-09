@@ -64,7 +64,7 @@ autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 
 # train for 100 epoch
 autoencoder.fit(x_train_noisy, x_train,
-                nb_epoch=100,
+                nb_epoch=5,
                 batch_size=128,
                 shuffle=True,
                 validation_data=(x_test_noisy, x_test))
@@ -72,7 +72,7 @@ autoencoder.fit(x_train_noisy, x_train,
 
 
 # displays reconstructed models:
-x_test_encoded = autoencoder.predict(x_test, batch_size=batch_size)
+x_test_encoded = autoencoder.predict(x_test, batch_size=128)
 
 for i in range(n):
 	# display reconstruction
