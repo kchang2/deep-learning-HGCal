@@ -32,12 +32,11 @@ FLAGS = flags.FLAGS
 # Global configuration
 flags.DEFINE_string('model_name', 'dae', 'Model name.')
 flags.DEFINE_string('dataset', 'mnist', 'Which dataset to use. ["mnist", "cifar10", "neutrino", "custom"]')
-flags.DEFINE_string('data_path', '', 'Path to the neutrino dataset directory.')
+flags.DEFINE_string('neutrino_path', '', 'Path to the neutrino dataset directory.')
 flags.DEFINE_string('train_dataset', '', 'Path to train set .npy file.')
 flags.DEFINE_string('valid_dataset', '', 'Path to valid set .npy file.')
 flags.DEFINE_string('test_dataset', '', 'Path to test set .npy file.')
 flags.DEFINE_string('cifar_dir', '', 'Path to the cifar 10 dataset directory.')
-flags.DEFINE_integer('seed', -1, 'Seed for the random generators (>=0). Useful for testing hyperparameters.')
 flags.DEFINE_boolean('restore_previous_model', False, 'If true, restore previous model corresponding to model name.')
 flags.DEFINE_boolean('encode_train', False, 'Whether to encode and store the training set.')
 flags.DEFINE_boolean('encode_valid', False, 'Whether to encode and store the validation set.')
@@ -47,9 +46,12 @@ flags.DEFINE_string('save_parameters', '', 'Path to save the parameters of the m
 flags.DEFINE_string('weights', None, 'Path to a numpy array containing the weights of the autoencoder.')
 flags.DEFINE_string('h_bias', None, 'Path to a numpy array containing the encoder bias vector.')
 flags.DEFINE_string('v_bias', None, 'Path to a numpy array containing the decoder bias vector.')
+flags.DEFINE_integer('seed', -1, 'Seed for the random generators (>=0). Useful for testing hyperparameters.')
+
 
 
 # Stacked Denoising Autoencoder specific parameters
+flags.DEFINE_string('main_dir', 'dae/', 'Directory to store data relative to the algorithm.')
 flags.DEFINE_integer('n_components', 256, 'Number of hidden units in the dae.')
 flags.DEFINE_float('l2reg', 5e-4, 'Regularization parameter. If 0, no regularization.')
 flags.DEFINE_string('corr_type', 'masking', 'Type of input corruption. ["none", "masking", "salt_and_pepper"]')
@@ -57,7 +59,6 @@ flags.DEFINE_float('corr_frac', 0, 'Fraction of the input to corrupt.')
 flags.DEFINE_integer('xavier_init', 1, 'Value for the constant in xavier weights initialization.')
 flags.DEFINE_string('enc_act_func', 'tanh', 'Activation function for the encoder. ["sigmoid", "tanh"]')
 flags.DEFINE_string('dec_act_func', 'none', 'Activation function for the decoder. ["sigmoid", "tanh", "none"]')
-flags.DEFINE_string('main_dir', 'dae/', 'Directory to store data relative to the algorithm.')
 flags.DEFINE_string('loss_func', 'mean_squared', 'Loss function. ["mean_squared" or "cross_entropy"]')
 flags.DEFINE_string('calc_acc', True, 'Display accuracy of learning.')
 flags.DEFINE_integer('verbose', 1, 'Level of verbosity. 0 - silent, 1 - print accuracy.')
@@ -67,6 +68,7 @@ flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_float('momentum', 0.4, 'Momentum parameter.')
 flags.DEFINE_integer('num_epochs', 1000, 'Number of epochs.')
 flags.DEFINE_integer('batch_size', 1000, 'Size of each mini-batch.')
+flags.DEFINE_string('image_type', 'grey', 'Color image produced ["grey", "RGB", "CMYK"]')
 
 
 assert FLAGS.dataset in ['mnist','cifar10','neutrinos','custom']
@@ -95,6 +97,18 @@ if __name__ == '__main__':
 	
 #	utils.random_seed_np_tf(FLAGS.seed) # not useful at the moment
 
+	# Writing datapaths if nonexistent
+	main_dir = FLAGS.main_dir + '/' if FLAGS.main_dir[-1] != '/' else FLAGS.main_dir
+
+	models_dir = os.path.join(main_dir, config.models_dir)
+	data_dir = os.path.join(main_dir, config.data_dir)
+	summary_dir = os.path.join(main_dir, config.summary_dir)
+
+	for d in [models_dir, data_dir, summary_dir]:
+		if not os.path.exists(d):
+			os.makedirs(d)
+
+	
 	# MNIST
 	if FLAGS.dataset == 'mnist':
 		trX, vlX, teX = datasets.load_mnist_dataset(mode='unsupervised')
@@ -107,13 +121,14 @@ if __name__ == '__main__':
 	# neutrinos
 	elif FLAGS.dataset == 'neutrinos':
 		if FLAGS.data_path:
-			trX = load_from_np(FLAGS.data_path)
+			data = load_from_np(FLAGS.neutrino_path)
 		else:
-			trX = load_from_np(FLAGS.train_dataset)
-	
-		half = trX.shape[0] / 2
-		vlX = trX[:half] # Validation set is the first half of the test set
-		teX = load_from_np(FLAGS.test_dataset)
+			data = load_from_np(FLAGS.train_dataset)
+
+		trX = data[:-data.shape[0]/5]
+		# vlX = trX[-trX.shape[0]/5:]   # Validation set is the last 1/5 of the training set
+		vlX = None
+		teX = data[-data.shape[0]/5:]
 
 	# custom
 	elif FLAGS.dataset == 'custom':
@@ -127,50 +142,54 @@ if __name__ == '__main__':
 		vlX = None
 		teX = None
 
-	# create the object (not sure if needed)
-    # enc_act_func = utilities.str2actfunc(FLAGS.enc_act_func)
-	# dec_act_func = utilities.str2actfunc(FLAGS.dec_act_func)
-
-	# models_dir = os.path.join(config.models_dir, FLAGS.main_dir)
-	# data_dir = os.path.join(config.data_dir, FLAGS.main_dir)
-	# summary_dir = os.path.join(config.summary_dir, FLAGS.main_dir)
-
-	# create the object
-	dae = autoencoder.DenoisingAutoencoder(
-		seed=FLAGS.seed,
-		model_name=FLAGS.model_name,
-		n_components=FLAGS.n_components,
-		enc_act_func=FLAGS.enc_act_func,
-		dec_act_func=FLAGS.dec_act_func,
-		xavier_init=FLAGS.xavier_init,
-		corr_type=FLAGS.corr_type,
-		corr_frac=FLAGS.corr_frac, 
-		dataset=FLAGS.dataset,
-		loss_func=FLAGS.loss_func,
-		calc_acc=FLAGS.calc_acc,
-		main_dir=FLAGS.main_dir, 
-		opt=FLAGS.opt,
-		learning_rate=FLAGS.learning_rate, 
-		momentum=FLAGS.momentum,
-		verbose=FLAGS.verbose, 
-		num_epochs=FLAGS.num_epochs, 
-		batch_size=FLAGS.batch_size,
-		)
-
-	# fit the model
-	W = None
+	# custom weight and bias settings
+	W_ = None
 	if FLAGS.weights:
-		W = np.load(FLAGS.weights)
+		W_ = np.load(FLAGS.weights)
 
-	bh = None
+	bh_ = None
 	if FLAGS.h_bias:
 		bh = np.load(FLAGS.h_bias)
 
-	bv = None
+	bv_ = None
 	if FLAGS.v_bias:
-		bv = np.load(FLAGS.v_bias)
+		bv_ = np.load(FLAGS.v_bias)
 
-	dae.fit(trX, teX, restore_previous_model=FLAGS.restore_previous_model)
+
+	# create the object
+	dae = autoencoder.DenoisingAutoencoder(
+		model_name=FLAGS.model_name,
+		n_components=FLAGS.n_components,
+		models_dir=models_dir, 
+		data_dir=data_dir,
+		summary_dir=summary_dir,
+		enc_act_func=FLAGS.enc_act_func,
+		dec_act_func=FLAGS.dec_act_func,
+		loss_func=FLAGS.loss_func,
+		calc_acc=FLAGS.calc_acc,
+		num_epochs=FLAGS.num_epochs, 
+		batch_size=FLAGS.batch_size,
+		dataset=FLAGS.dataset,
+		xavier_init=FLAGS.xavier_init,
+		opt=FLAGS.opt,		
+		learning_rate=FLAGS.learning_rate, 
+		momentum=FLAGS.momentum,
+		corr_type=FLAGS.corr_type,
+		corr_frac=FLAGS.corr_frac, 
+		verbose=FLAGS.verbose, 
+		seed=FLAGS.seed,
+		l2reg=FLAGS.l2reg,
+		W_=W_,
+		bh_=bh_,
+		bv_=bv_
+		)
+
+
+	# fit the model
+	dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
+
+	# display the images
+	##### FILL IN HERE #####
 
 	# Save the model paramenters
 	if FLAGS.save_parameters:
@@ -190,4 +209,4 @@ if __name__ == '__main__':
 	dae.transform(teX, name='test', save=FLAGS.encode_test)
 
 	# save images
-	dae.get_weights_as_images(28, 28, max_images=FLAGS.weight_images)
+	dae.get_weights_as_images(28, 28, n_images=FLAGS.weight_images, img_type=FLAGS.image_type)

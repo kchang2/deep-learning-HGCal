@@ -28,7 +28,9 @@ class DenoisingAutoencoder(object):
 	def __init__(self, 
 				model_name='dae', 
 				n_components=256, 
-				main_dir='dae/', 
+				models_dir='dae/models/',
+				data_dir='dae/data/',
+				summary_dir='dae/summary/', 
 				enc_act_func='tanh',
 				dec_act_func='none', 
 				loss_func='mean_squared',
@@ -43,14 +45,20 @@ class DenoisingAutoencoder(object):
 				corr_type='none',
 				corr_frac=0,
 				verbose=1,
-				seed=-1
+				seed=-1,
+				l2reg=0,
+				W_=None,
+				bh_=None,
+				bv_=None
 				):
 		'''
 		Parameters
 		----------
 		model_name 			: name of model to use, used to save data
 		n_components 		: number of hidden units (number of components to keep)
-		main_dir 			: main directory to put the modles, data, and summary directories
+		models_dir 			: directory to store models
+		data_dir 			: directory to store data
+		summary_dir 		: directory to store summary
 		enc_act_func 		: activation function for the encoder (ie. tanh, sigmoid)
 		dec_act_function 	: activation function for the decoder (ie. tanh, sigmoid, none)
 		loss_func 			: loss function (ie. mean_squared, cross_entropy) used to measure degree of fit
@@ -67,6 +75,11 @@ class DenoisingAutoencoder(object):
 		corr_frac 			: fraction of the input to corrupt
 		verbose 			: Level of verbosity or frequency of information regarding learning process printed (0 - silent, 1 - print accuracy)
 		seed 				: positive integer for seeding random generators. Ignored if < 0.
+		l2reg				: regularization parameter. If 0, then no regularization.
+		W_ 					: weight of the autoencoder
+		bh_ 				: bias of the encoder vector
+		bv_ 				: bias of the decoder vector
+	
 	
 		Note these are optional
 		-----------------------
@@ -74,12 +87,15 @@ class DenoisingAutoencoder(object):
 		learning rate - default 0.01
 		num_epochs - default 10
 		verbose - default 0
+		l2reg - default 0
 		'''
 
 		# initialization (all set from input or creation of value)
 		self.model_name = model_name
 		self.n_components = n_components
-		self.main_dir = main_dir
+		self.models_dir = models_dir
+		self.data_dir = data_dir
+		self.summary_dir = summary_dir
 		self.enc_act_func = enc_act_func
 		self.dec_act_func = dec_act_func
 		self.loss_func = loss_func
@@ -95,20 +111,21 @@ class DenoisingAutoencoder(object):
 		self.corr_frac = corr_frac
 		self.verbose = verbose
 		self.seed = seed
+		self.W_ = W_
+		self.bh_ = bh_
+		self.bv_ = bv_
 
+		# random seeder for hyperparameters
 		if self.seed >= 0:
 			np.random.seed(self.seed)
 			tf.set_random_seed(self.seed)
 
-		self.models_dir, self.data_dir, self.tf_summary_dir = self._create_data_directories()
+		# model set path directory
 		self.model_path = self.models_dir + self.model_name
 
+		# storage objects for tensorflow variables
 		self.input_data = None
 		self.input_data_corr = None
-
-		self.W_ = None
-		self.bh_ = None
-		self.bv_ = None
 
 		self.encode = None
 		self.decode = None
@@ -117,6 +134,8 @@ class DenoisingAutoencoder(object):
 		self.cost = None
 		self.accuracy = None
 
+		# tensorflow objects
+		self.tf_graph = tf.Graph()
 		self.tf_session = None
 		self.tf_merged_summaries = None
 		self.tf_summary_writer = None
@@ -125,6 +144,7 @@ class DenoisingAutoencoder(object):
 
 	def fit(self, train_set, validation_set=None, restore_previous_model=False):
 		''' Fit the model to the data.
+			See keras fit model: https://github.com/fchollet/keras/blob/master/keras/models.py
 
 		Parameters
 		----------
@@ -163,9 +183,9 @@ class DenoisingAutoencoder(object):
 		if restore_previous_model:
 			self.tf_saver.restore(self.tf_session, self.model_path)
 
-		self.tf_summary_writer = tf.train.SummaryWriter(self.tf_summary_dir, self.tf_session.graph)
-		# train_writer = tf.train.SummaryWriter(self.tf_summary_dir + '/train', self.tf_session.graph)
-		# test_writer = tf.train.SummaryWriter(self.tf_summary_dir + '/test', self.tf_session.graph)
+		self.tf_summary_writer = tf.train.SummaryWriter(self.summary_dir, self.tf_session.graph)
+		# train_writer = tf.train.SummaryWriter(self.summary_dir + '/train', self.tf_session.graph)
+		# test_writer = tf.train.SummaryWriter(self.summary_dir + '/test', self.tf_session.graph)
 
 	def _train_model(self, train_set, validation_set):
 		''' Trains the model
@@ -268,9 +288,9 @@ class DenoisingAutoencoder(object):
 		----------
 		n_features	: number of features, int
 		regtype 	: regularization type
-		W_ 			: weight of matrix np array
-		bh_ 		: hidden bias np array
-		bv_ 		: visible bias np array
+		W_ 			: weight of matrix, np array
+		bh_ 		: hidden bias, np array
+		bv_ 		: visible bias, np array
 
 		Returns
 		-------
@@ -284,15 +304,20 @@ class DenoisingAutoencoder(object):
 		self._create_decode_layer()
 
 		self._create_cost_function_node()
-		self._create_train_step_node()
-		self._create_accuracy_node()
+		# self._create_accuracy_node()
 		self._create_variable_node(self.W_, 'weight')
 		self._create_variable_node(self.bh_, 'hidden bias')
 		self._create_variable_node(self.bv_, 'visible bias')
 
+		self._create_train_step_node()
+
+
 
 	def _create_placeholders(self, n_features):
 		''' Creates the TensorFlow placeholders for the model.
+		Parameters
+		----------
+		n_features	: number of features, int
 
 		Returns
 		-------
@@ -300,14 +325,20 @@ class DenoisingAutoencoder(object):
 				input_data_corr( shape(None, n_feature)))
 		'''
 
-		input_data = tf.placeholder('float', [None, n_features], name='x-input')
-		input_data_corr = tf.placeholder('float', [None, n_features], name='x-corr-input')
+		input_data = tf.placeholder(tf.float32, [None, n_features], name='x-input')
+		input_data_corr = tf.placeholder(tf.float32, [None, n_features], name='x-corr-input')
 
-		return input_data, input_data_corr
+		# unsupervised mode
+		#input_labels = tf.placeholder(tf.float32)
+		#keep_prob = tf.placeholder(tf.float32, name='keep-probs')
+		return input_data, input_data_corr #, input_labels, keep_prob
 
 
 	def _create_variables(self, n_features):
 		''' Create the TensorFlow variables for the model.
+		Parameters
+		----------
+		n_features	: number of features, int
 
 		Returns 
 		-------
@@ -315,16 +346,27 @@ class DenoisingAutoencoder(object):
 				hidden bias( shape(n_components)),
 				visible bias( shape(n_features)))
 		'''
+		if self.W_:
+			W_ = tf.Variable(self.W_, name='enc-w')
+		else:
+			W_ = tf.Variable(utils.xavier_init(n_features, self.n_components, self.xavier_init), name='enc-w')
+			#self.W_ = tf.Variable(tf.trucated_normal(shape=[n_features, self.n_components], stdddev=0.1), name='enc-w')
 
-		W_ = tf.Variable(utils.xavier_init(n_features, self.n_components, self.xavier_init), name='enc-w')
-		bh_ = tf.Variable(tf.zeros([self.n_components]), name='hidden-bias')
-		bv_ = tf.Variable(tf.zeros([n_features]), name='visible-bias')
+		if self.bh_:
+			bh_ = tf.Variable(self.bh_, name='hidden-bias')
+		else:
+			bh_ = tf.Variable(tf.constant(0.1, shape=[self.n_components]), name='hidden-bias')
+
+		if self.bv_:
+			bv_ = tf.Variable(self.bv_, name='visible-bias')
+		else:
+			bv_ = tf.Variable(tf.constant(0.1, shape=[n_features]), name='visible-bias')
 
 		return W_, bh_, bv_
 
 
 	def _create_encode_layer(self):
-		''' Create the encoding alyer of the network. 
+		''' Create the encoding layer of the network. 
 			The encoded layer is the encoded representation of the input
 
 		Returns
@@ -340,7 +382,7 @@ class DenoisingAutoencoder(object):
 				self.encode = tf.nn.tanh(tf.matmul(self.input_data_corr, self.W_) + self.bh_)
 
 			else:
-				self.encode = None
+				self.encode = tf.matmul(self.input_data, self.W_) + self.bh_
 
 
 	def _create_decode_layer(self):
@@ -357,23 +399,22 @@ class DenoisingAutoencoder(object):
 				self.decode = tf.nn.sigmoid(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
 				_ = tf.histogram_summary('decoding layer -- sigmoid', self.decode)
 
-
 			elif self.dec_act_func == 'tanh':
 				self.decode = tf.nn.tanh(tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_)
 				_ = tf.histogram_summary('decoding layer -- tanh', self.decode)
 
-
-			elif self.dec_act_func == 'none':
+			else:
 				self.decode = tf.matmul(self.encode, tf.transpose(self.W_)) + self.bv_
 				_ = tf.histogram_summary('decoding layer -- None', self.decode)
 
 
-			else:
-				self.decode = None
-
-
-	def _create_cost_function_node(self):
+	def _create_cost_function_node(self, regterm=None):
 		''' create the cost function node of the network
+		Important variables
+		-------------------
+		self.decode 		: reconstructed image, or the model output node
+		self.input_data 	: original image, or reference input placeholder node
+		self.regterm 		: regularization term 			# NOT NEEDED FOR NOW
 
 		Returns
 		-------
@@ -382,19 +423,28 @@ class DenoisingAutoencoder(object):
 
 		with tf.name_scope('cost'):
 			if self.loss_func == 'cross_entropy':
-				self.cost = -tf.reduce_sum(self.input_data * tf.log(self.decode))
-				_ = tf.scalar_summary("cross entropy", self.cost)
+				cost = -tf.reduce_sum(self.input_data * tf.log(self.decode))
+
+			elif self.loss_func == 'softmax_cross_entropy':
+				softmax = tf.nn.softmax(self.decode)
+				cost = - tf.reduce_mean(self.input_data * tf.loag(softmax) + (1 - self.input_data) * tf.log(1 - softmax))
 
 			elif self.loss_func == 'mean_squared':
-				self.cost = tf.sqrt(tf.reduce_mean(tf.square(self.input_data - self.decode)))
-				_ = tf.scalar_summary("mean squared", self.cost)
+				cost = tf.sqrt(tf.reduce_mean(tf.square(self.input_data - self.decode)))
 
 			else:
-				self.cost = None
+				cost = None
+
+		if cost is not None:
+			self.cost = cost + regterm if regterm is not None else cost
+			_ = tf.scalar_summary(self.loss_func, self.cost)
+		else:
+			self.cost = None
 
 
 	def _create_accuracy_node(self):
-		''' create the accuracy node of the network
+		''' create the accuracy node of the network.
+		** This is not needed for the dAe **
 
 		Returns
 		-------
@@ -444,32 +494,95 @@ class DenoisingAutoencoder(object):
 			elif self.opt == 'momentum':
 				self.train_step = tf.train_MomentumOptimizer(self.learning_rate, self.momentum).minimize(self.cost)
 
+			elif self.opt == 'adam':
+				self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+
 			else:
 				self.train_step = None
 
 
-	def transform(self, data, name='train', save=False):
-		''' Transforms data according to the model.
+	def transform(self, data, name='train-transform', graph=None, save=False):
+		''' Transforms data (corrupted) according to the model.
+			It should return whatever end encoder node/layer (with final minimally-optimized n-components) image it
+			converts your images to. This layer should have n-components << first layer n-components
 
 		Parameters
 		----------
-		data : data to transform
-		name : identifier for the data that is being encoded
-		save : if true, save data to disk
+		data 	: data to transform
+		name 	: identifier for the data that is being encoded
+		graph 	: tf graph objects
+		save 	: if true, save data to disk
+
+		Important Variables
+		-------------------
+		input_data_corr 	: the corrupted info put into the transform method, want to see outcome from our model on corrupted set
 
 		Returns
 		-------
 		transformed data
 		'''
 
-		with tf.Session() as self.tf_session:
-			self.tf_saver.restore(self.tf_session, self.models_dir + self.model_name)
-			encoded_data = self.encode.eval({self.input_data_corr: data})
+		g = graph if graph is not None else self.tf_graph
 
-			if save:
-				np.save(self.data_dir + self.model_name + '-' + name, encoded_data)
+		with g.as_default():
+			with tf.Session() as self.tf_session:
+				self.tf_saver.restore(self.tf_session, self.model_path)
+				encoded_data = self.encode.eval({self.input_data_corr: data})
+				if save:
+					np.save(self.data_dir + self.model_name + '-' + name, encoded_data)
 
-			return encoded_data
+				return encoded_data
+
+
+	def reconstruct(self, data, name='train-reconstruct', graph=None, save=False):
+		''' Reconstruct the data (corrupted) using the learned model.
+			This should return the final result from the entire process of encoding to decoding.
+			In this layer the n-components == starting n-components. 
+
+		Parameters
+		----------
+		data 		: Data to reconstruct
+		graph		: tf graph objects
+		name 		: identifier for the data that is being reconstructed
+		save 		: if true, saves data to disk
+
+		Returns
+		-------
+		labels
+		'''
+
+		g = graph if graph is not None else self.tf_graph:
+
+		with g.as_default():
+			with tf.Session() as self.tf_session:
+				self.tf_saver.restore(self.tf_session, self.model_path)
+				reconstructed_data = self.reconstruction.eval({self.input_data_corr: data})
+				if save:
+					np.save(self.data_dir + self.model_name + '-' + name, reconstructed_data)
+
+				return reconstructed_data
+
+
+	def compute_reconstruction_loss(self, data, data_ref, graph=None):
+		''' Computes the reconstruction loss over the chosen dataset (test).
+
+		Parameters
+		----------
+		data 		: corrupted data to reconstruct
+		data_ref	: original data to check
+		graph 		: tf graph objects
+
+		Returns
+		-------
+		labels
+		'''
+
+		g = graph if graph is not None else self.tf_graph
+
+		with g.as_default():
+			with tf.Session() as self.tf_session:
+				self.tf_saver.restore(self.tf.session, self.model_path)
+				return self.cost.eval({self.input_data_corr: data, self.input_data: data_ref})
 
 
 	def load_model(self, shape, model_path):
@@ -496,45 +609,27 @@ class DenoisingAutoencoder(object):
 			self.tf_saver.restore(self.tf_session, model_path)
 
 
-	def get_model_parameters(self):
+	def get_model_parameters(self, graph=None):
 		''' Return the model parameters in the form of numpy arrays.
 
 		Returns
 		-------
 		model parameters
 		'''
-		with tf.Session() as self.tf_session:
-			self.tf_saver.restore(self.tf_session, self.models_dir + self.model_name)
+		g = graph if graph is not None else self.tf_graph
 
-			return{
-				'enc_w': self.W_.eval(),
-				'enc_b': self.bh_.eval(),
-				'dec_b': self.bv_.eval(),
-			}
+		with g.as_default():
+			with tf.Session() as self.tf_session:
+				self.tf_saver.restore(self.tf_session, self.models_dir + self.model_name)
 
-	def _create_data_directories(self):
-		''' Create the three directories for storing respectively the models,
-		the data generated by training and the TensorFlow's summaries.
-
-		Returns
-		-------
-		tuple of strings (models_dir, data_dir, summary_dir)
-		'''
-
-		self.main_dir = self.main_dir + '/' if self.main_dir[-1] != '/' else self.main_dir
-
-		models_dir = config.models_dir + self.main_dir
-		data_dir = config.data_dir + self.main_dir
-		summary_dir = config.summary_dir + self.main_dir
-
-		for d in [models_dir, data_dir, summary_dir]:
-			if not os.path.isdir(d):
-				os.mkdir(d)
-
-		return models_dir, data_dir, summary_dir
+				return{
+					'enc_w': self.W_.eval(),
+					'enc_b': self.bh_.eval(),
+					'dec_b': self.bv_.eval(),
+				}
 
 
-	def get_weights_as_images(self, width, height, outdir='img/', max_images=10, model_path=None):
+	def get_weights_as_images(self, width, height, main_dir='dae/', outdir='img/', n_images=10, model_path=None, img_type='grey'):
 		''' Saves the weights of this autoencoder as images, one image per hidden unit. 
 		This is useful to visualize what the autoencoder has learned
 
@@ -542,31 +637,34 @@ class DenoisingAutoencoder(object):
 		----------
 		width 		: width of the images, int
 		height 		: height of the images, int
+		main_dir	: path where all your encoding information is placed
 		outdir 		: output directory for the images -- this path is appended to self.data_dir, string (default is 'data/sdae/img')
-		max_images	: number of images to return, int (default is 10)
+		n_images	: number of images to return, int (default is 10)
 		'''
 
-		assert max_images <= self.n_components
+		assert n_images <= self.n_components
 
-		outdir = self.data_dir + outdir
-
+		main_dir = main_dir + '/' if main_dir[-1] != '/' else main_dir
+		outdir = outdir + '/' if outdir[-1] != '/' else outdir
+		outdir = main_dir + outdir
+		
 		if not os.path.isdir(outdir):
 			os.mkdir(outdir)
+
 
 		with tf.Session() as self.tf_session:
 			if model_path is not None:
 				self.tf_saver.restore(self.tf_session, model_path)
 			else:
-				self.tf_saver.restore(self.tf_session, self.models_dir + self.model_name)
+				self.tf_saver.restore(self.tf_session, self.model_path)
 
 			enc_weights = self.W_.eval()
 
-			perm = np.random.permutation(self.n_components)[:max_images]
-
+			perm = np.random.permutation(enc_weights.shape[1])[:n_images]
 			for p in perm:
 				enc_w = np.array([i[p] for i in enc_weights])
 				image_path = outdir + self.model_name + '-enc_weights_{}.png'.format(p)
-				utils.gen_image(enc_w, width, height, image_path)
+				utils.gen_image(enc_w, width, height, image_path, img_type)
 
 
 
