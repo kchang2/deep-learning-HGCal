@@ -458,7 +458,7 @@ class DenoisingAutoencoder(object):
 					correct_prediction = tf.equal(tf.argmax(self.decode, 1), tf.argmax(self.input_data, 1))
 				with tf.name_scope('accuracy'):
 					accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-				_ =  tf.scalar_summary('accuracy', accuracy)
+				_ = tf.scalar_summary('accuracy', accuracy)
 			else:
 				self.accuracy = None
 
@@ -499,6 +499,9 @@ class DenoisingAutoencoder(object):
 			elif self.opt == 'adam':
 				self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
 
+			elif self.opt == 'ada_delta':
+				self.train_step = tf.train.AdadeltaOptimizer(self.learning_rate).minimize(self.cost)
+				
 			else:
 				self.train_step = None
 

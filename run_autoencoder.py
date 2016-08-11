@@ -14,6 +14,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import os, math
+import copy
 
 import sys
 sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/models')
@@ -63,7 +64,7 @@ flags.DEFINE_string('dec_act_func', 'none', 'Activation function for the decoder
 flags.DEFINE_string('loss_func', 'mean_squared', 'Loss function. ["mean_squared" or "cross_entropy"]')
 flags.DEFINE_string('calc_acc', True, 'Display accuracy of learning.')
 flags.DEFINE_integer('verbose', 1, 'Level of verbosity. 0 - silent, 1 - print accuracy.')
-flags.DEFINE_string('opt', 'gradient_descent', '["gradient_descent", "ada_grad", "momentum", "adam"]')
+flags.DEFINE_string('opt', 'ada_grad', '["gradient_descent", "ada_grad", "momentum", "adam", "ada_delta"]')
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_float('momentum', 0.4, 'Momentum parameter.')
 flags.DEFINE_integer('num_epochs', 100, 'Number of epochs.')
@@ -86,7 +87,7 @@ assert FLAGS.dec_act_func in ['sigmoid', 'tanh', 'none']
 assert FLAGS.corr_type in ['masking', 'salt_and_pepper', 'none']
 assert 0. <= FLAGS.corr_frac <= 1.
 assert FLAGS.loss_func in ['cross_entropy', 'mean_squared']
-assert FLAGS.opt in ['gradient_descent', 'ada_grad', 'momentum', 'adam']
+assert FLAGS.opt in ['gradient_descent', 'ada_grad', 'momentum', 'adam', 'ada_delta']
 
 
 def load_from_np(dataset_path):
@@ -173,6 +174,9 @@ if __name__ == '__main__':
 		d_width = None 		# FIX LATER
 		d_height = None
 
+	# used to display original image
+	teX_original = copy.deepcopy(teX)
+
 	# custom weight and bias settings
 	W_ = None
 	if FLAGS.weights:
@@ -218,8 +222,10 @@ if __name__ == '__main__':
 		)
 
 
-	# fit the model
-	dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
+	# fit the model 
+	# NOT SURE IF teX or vlX
+	dae.fit(trX, validation_set=vlX, restore_previous_model=FLAGS.restore_previous_model)
+	# dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
 
 	# computes reconstructed models
 	teX_encoded = dae.transform(teX, save=False)		# (10000, n_component for MNIST)
@@ -230,14 +236,13 @@ if __name__ == '__main__':
 	print 'reconstruct/decoded shape: ', teX_decoded.shape
 
 
-	# displays decoded models
+	# displays original + decoded models
 	# first checks if u want to print images, then
 	# checks if your dimension are alirght by: if standard dataset -> if custom dimensions matches each sample length -> if square
 	# fails if doesn't meat the three criteria
 	if FLAGS.encdec_images > 0:
 		n = FLAGS.encdec_images
 		pr_dec = True
-		plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
 
 		if d_width is not None:
 			pass
@@ -257,6 +262,18 @@ if __name__ == '__main__':
 				pr_dec = False
 
 		if pr_dec == True:
+			# original image
+			plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
+			for i in range(n):
+				ax = plt.subplot(2, n, i + n) 	# (row, col, plot number -- identify particular subplot, starts at 1, ends at max ie. row * col)
+				plt.imshow(teX_original[i].reshape(d_width, d_height))
+				plt.gray()
+				ax.get_xaxis().set_visible(False)
+				ax.get_yaxis().set_visible(False)
+			plt.show()
+
+			# decoded image
+			plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
 			for i in range(n):
 				ax = plt.subplot(2, n, i + n) 	# (row, col, plot number -- identify particular subplot, starts at 1, ends at max ie. row * col)
 				plt.imshow(teX_decoded[i].reshape(d_width, d_height))

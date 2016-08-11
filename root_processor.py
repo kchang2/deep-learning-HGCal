@@ -137,15 +137,16 @@ for event in outArray_u:
 print 'writing structurally organized file rechit_organized'
 np.save('rechit_organized.npy', outArray_o)
 
-# removes all event, wafer distinction
+# removes event distinction
 for event_i in xrange(0,len(outArray_o)):
     for wafer_i in xrange(0,len(outArray_o[0])):
 
-        # if no noise -- remove from set
-        if all(cell == 0 for cell in outArray_o[event_i][wafer_i]):
-            continue
-        else:
-            outArray_f.append(outArray_o[event_i][wafer_i])
+        outArray_f.append(outArray_o[event_i][wafer_i])
+        # # if no noise -- remove from set (NOT WORKING OR VALID)
+        # if all(cell == 0 for cell in outArray_o[event_i][wafer_i]):
+        #     continue
+        # else:
+            # outArray_f.append(outArray_o[event_i][wafer_i])
 
 
 print 'writing filtered file rechit_formatted'
