@@ -17,7 +17,6 @@ import os
 import sys
 sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
 
-import config
 import utils
 
 class DenoisingAutoencoder(object):
@@ -142,7 +141,7 @@ class DenoisingAutoencoder(object):
 		self.tf_saver = None
 
 
-	def fit(self, train_set, validation_set=None, restore_previous_model=False):
+	def fit(self, train_set, validation_set=None, restore_previous_model=False, graph=None):
 		''' Fit the model to the data.
 			See keras fit model: https://github.com/fchollet/keras/blob/master/keras/models.py
 
@@ -160,13 +159,15 @@ class DenoisingAutoencoder(object):
 		'''
 
 		n_features = train_set.shape[1]
+		g = graph if graph is not None else self.tf_graph
 
-		self._build_model(n_features)
+		with g.as_default():
+			self._build_model(n_features)
 
-		with tf.Session() as self.tf_session:
-			self._initialize_tf_utilities_and_ops(restore_previous_model)
-			self._train_model(train_set, validation_set)
-			self.tf_saver.save(self.tf_session, self.models_dir + self.model_name)
+			with tf.Session() as self.tf_session:
+				self._initialize_tf_utilities_and_ops(restore_previous_model)
+				self._train_model(train_set, validation_set)
+				self.tf_saver.save(self.tf_session, self.models_dir + self.model_name)
 
 
 	def _initialize_tf_utilities_and_ops(self, restore_previous_model):
@@ -279,6 +280,7 @@ class DenoisingAutoencoder(object):
 		
 		if self.verbose == 1:
 			print('validation cost at step %s: %s' %(epoch, err))
+			# print("Reconstruction loss at step %s: %s" % (epoch, err))
 
 
 	def _build_model(self, n_features):
@@ -502,7 +504,7 @@ class DenoisingAutoencoder(object):
 
 
 	def transform(self, data, name='train-transform', graph=None, save=False):
-		''' Transforms data (corrupted) according to the model.
+		''' Transforms data (corrupted) according to the model. [Encode]
 			It should return whatever end encoder node/layer (with final minimally-optimized n-components) image it
 			converts your images to. This layer should have n-components << first layer n-components
 
@@ -535,7 +537,7 @@ class DenoisingAutoencoder(object):
 
 
 	def reconstruct(self, data, name='train-reconstruct', graph=None, save=False):
-		''' Reconstruct the data (corrupted) using the learned model.
+		''' Reconstruct the data (corrupted) using the learned model. [Decode]
 			This should return the final result from the entire process of encoding to decoding.
 			In this layer the n-components == starting n-components. 
 
@@ -551,20 +553,20 @@ class DenoisingAutoencoder(object):
 		labels
 		'''
 
-		g = graph if graph is not None else self.tf_graph:
+		g = graph if graph is not None else self.tf_graph
 
 		with g.as_default():
 			with tf.Session() as self.tf_session:
 				self.tf_saver.restore(self.tf_session, self.model_path)
-				reconstructed_data = self.reconstruction.eval({self.input_data_corr: data})
+				decoded_data = self.decode.eval({self.input_data_corr: data})
 				if save:
-					np.save(self.data_dir + self.model_name + '-' + name, reconstructed_data)
+					np.save(self.data_dir + self.model_name + '-' + name, decoded_data)
 
-				return reconstructed_data
+				return decoded_data
 
 
 	def compute_reconstruction_loss(self, data, data_ref, graph=None):
-		''' Computes the reconstruction loss over the chosen dataset (test).
+		''' Computes the reconstruction loss over the chosen dataset (test). [Decoded vs. original]
 
 		Parameters
 		----------

@@ -1,3 +1,17 @@
+# Kai Chang - Caltech CMS-CERN 2016
+#
+# Keras denoising autoencoder. Much less complex than the tensorflow
+# version, if you want a quick example on how to run things.
+# Will soon be implemented to run HGC data.
+# 
+# Backbone: https://blog.keras.io/building-autoencoders-in-keras.html
+#
+#
+# Needs to have keras, matplotlib, and numpy installed.
+# =============================================================================
+
+
+
 from keras.datasets import mnist
 
 from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, UpSampling2D
@@ -7,13 +21,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # load dataset
-(x_train, _), (x_test, _) = mnist.load_data()						# 1 long array
+(x_train, _), (x_test, _) = mnist.load_data()						# 60000 x 28 x 28 list (ie. [60000 [28 [28]]])
 
 
 # format dataset
 x_train = x_train.astype('float32') / 255. 							# normalize values between 0 and 1
 x_test = x_test.astype('float32') / 255.
-x_train = np.reshape(x_train, (len(x_train), 1, 28, 28)) 			# reshape dataset to be images of 28 x 28 pixels
+x_train = np.reshape(x_train, (len(x_train), 1, 28, 28)) 			# reshape dataset to 60000 x 1 x 28 x28 (ie. 60000 images of 28 x 28 pixels)
 x_test = np.reshape(x_test, (len(x_test), 1, 28, 28))
 
 
@@ -29,13 +43,14 @@ x_test_noisy = np.clip(x_test_noisy, 0., 1.)
 # display noisy image
 n = 10
 plt.figure(figsize=(20, 2))
+
 for i in range(n):
-	# display corrupted image
     ax = plt.subplot(1, n, i)
     plt.imshow(x_test_noisy[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
+
 plt.show()
 
 
@@ -49,7 +64,6 @@ x = MaxPooling2D((2, 2), border_mode='same')(x)
 x = Convolution2D(32, 3, 3, activation='relu', border_mode='same')(x)
 encoded = MaxPooling2D((2, 2), border_mode='same')(x)
 
-
 # at this point the representation is (32, 7, 7) ie. 1568-dimensional
 # the loss reconstruction of the input
 x = Convolution2D(32, 3, 3, activation='relu', border_mode='same')(encoded)
@@ -58,13 +72,15 @@ x = Convolution2D(32, 3, 3, activation='relu', border_mode='same')(x)
 x = UpSampling2D((2, 2))(x)
 decoded = Convolution2D(1, 3, 3, activation='sigmoid', border_mode='same')(x)
 
+
 # we map the model an input to its reconstruction
 autoencoder = Model(input_img, decoded)
 autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 
+
 # train for 100 epoch
 autoencoder.fit(x_train_noisy, x_train,
-                nb_epoch=5,
+                nb_epoch=100,
                 batch_size=128,
                 shuffle=True,
                 validation_data=(x_test_noisy, x_test))
@@ -72,12 +88,18 @@ autoencoder.fit(x_train_noisy, x_train,
 
 
 # displays reconstructed models:
-x_test_encoded = autoencoder.predict(x_test, batch_size=128)
+x_test_encoded = autoencoder.predict(x_test, batch_size=128) # reconstructs the entire dataset in batches of 128 images
+
+
+# display reconstructed image
+n = 10
+plt.figure(figsize=(20, 2))
 
 for i in range(n):
-	# display reconstruction
     ax = plt.subplot(2, n, i + n)
     plt.imshow(x_test_encoded[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
+
+plt.show()

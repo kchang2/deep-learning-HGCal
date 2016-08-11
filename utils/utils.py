@@ -206,6 +206,3 @@ def gen_image(img, width, height, outfile, img_type='grey'):
 
     elif img_type == 'color':
         misc.imsave(outfile, img.reshape(3, width, height))
-
-
-
