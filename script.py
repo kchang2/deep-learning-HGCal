@@ -1,7 +1,9 @@
 # Kai Chang - Caltech CMS-CERN 2016
 #
-# Program runs root_processor on the long-run scale. Will eventually incorporate
-# other parts of the package, including dAe.
+# Program runs root_processor in the large scale. Will eventually incorporate
+# other parts of the package, including dAe. <-- This is up to CMS to build
+# TensorFlow package.
+#
 #
 # Needs to have root_processor events line blank,
 # Has to run on CMS environment (cmsenv)
@@ -10,7 +12,7 @@
 import sys, os
 import fileinput
 
-# open neutrino list file
+# open and create neutrino list file
 nfile = open('neutrinos.list')
 lines = nfile.readlines()
 nfile.close()
@@ -42,3 +44,5 @@ for line in lines:
 	f = open('root_processor.py', 'w')
 	f.write(oldfile)
 	f.close()
+
+

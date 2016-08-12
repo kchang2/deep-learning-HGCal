@@ -480,6 +480,8 @@ class DenoisingAutoencoder(object):
 
 	def _create_train_step_node(self):
 		''' Create the training step node of the network.
+			List of optimizers here: https://www.tensorflow.org/versions/r0.10/api_docs/python/train.html
+			^ includes srepsective papers
 
 		Returns
 		-------
@@ -494,7 +496,7 @@ class DenoisingAutoencoder(object):
 				self.train_step = tf.train.AdagradOptimizer(self.learning_rate).minimize(self.cost)
 
 			elif self.opt == 'momentum':
-				self.train_step = tf.train_MomentumOptimizer(self.learning_rate, self.momentum).minimize(self.cost)
+				self.train_step = tf.train.MomentumOptimizer(self.learning_rate, self.momentum).minimize(self.cost)
 
 			elif self.opt == 'adam':
 				self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)

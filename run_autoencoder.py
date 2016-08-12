@@ -35,7 +35,7 @@ FLAGS = flags.FLAGS
 # Global configuration
 flags.DEFINE_string('model_name', 'dae', 'Model name.')
 flags.DEFINE_string('dataset', 'mnist', 'Which dataset to use. ["mnist", "cifar10", "neutrino", "custom"]')
-flags.DEFINE_string('neutrino_path', '', 'Path to the neutrino dataset directory.')
+flags.DEFINE_string('neutrino_path', './rechit_test.npy', 'Path to the neutrino dataset directory.')
 flags.DEFINE_string('train_dataset', '', 'Path to train set .npy file.')
 flags.DEFINE_string('valid_dataset', '', 'Path to valid set .npy file.')
 flags.DEFINE_string('test_dataset', '', 'Path to test set .npy file.')
@@ -67,7 +67,7 @@ flags.DEFINE_integer('verbose', 1, 'Level of verbosity. 0 - silent, 1 - print ac
 flags.DEFINE_string('opt', 'ada_grad', '["gradient_descent", "ada_grad", "momentum", "adam", "ada_delta"]')
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_float('momentum', 0.4, 'Momentum parameter.')
-flags.DEFINE_integer('num_epochs', 100, 'Number of epochs.')
+flags.DEFINE_integer('num_epochs', 10, 'Number of epochs.')
 flags.DEFINE_integer('batch_size', 128, 'Size of each mini-batch.')
 
 flags.DEFINE_integer('weight_images', 10, 'Number of weight images to generate.')
@@ -80,7 +80,7 @@ flags.DEFINE_integer('decoded_height', 28, 'Decoded image height')
 flags.DEFINE_string('image_type', 'grey', 'Color image produced ["grey", "RGB", "CMYK"]')
 
 
-assert FLAGS.dataset in ['mnist','cifar10','neutrinos','custom']
+assert FLAGS.dataset in ['mnist','cifar10','neutrino','custom']
 assert FLAGS.train_dataset != '' if FLAGS.dataset == 'custom' else True
 assert FLAGS.enc_act_func in ['sigmoid', 'tanh']
 assert FLAGS.dec_act_func in ['sigmoid', 'tanh', 'none']
@@ -142,8 +142,8 @@ if __name__ == '__main__':
 		d_width = d_height = 32
 
 	# neutrinos
-	elif FLAGS.dataset == 'neutrinos':
-		if FLAGS.data_path:
+	elif FLAGS.dataset == 'neutrino':
+		if FLAGS.neutrino_path:
 			data = load_from_np(FLAGS.neutrino_path)
 		else:
 			data = load_from_np(FLAGS.train_dataset)
@@ -221,26 +221,25 @@ if __name__ == '__main__':
 		bv_=bv_
 		)
 
-
 	# fit the model 
 	# NOT SURE IF teX or vlX
-	dae.fit(trX, validation_set=vlX, restore_previous_model=FLAGS.restore_previous_model)
-	# dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
+	# dae.fit(trX, validation_set=vlX, restore_previous_model=FLAGS.restore_previous_model)
+	dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
 
 	# computes reconstructed models
-	teX_encoded = dae.transform(teX, save=False)		# (10000, n_component for MNIST)
-	teX_decoded = dae.reconstruct(teX, save=False)			# (10000, 784 for MNIST)
+	if FLAGS.encdec_images > 0:
+		teX_encoded = dae.transform(teX[:FLAGS.encdec_images], save=False)		# (10000, n_component for MNIST)
+		teX_decoded = dae.reconstruct(teX[:FLAGS.encdec_images], save=False)			# (10000, 784 for MNIST)
 
-	# shape of our transformed and encoded data
-	print 'transform/encoded shape: ', teX_encoded.shape
-	print 'reconstruct/decoded shape: ', teX_decoded.shape
+		# shape of our transformed and encoded data
+		print 'transform/encoded shape: ', teX_encoded.shape
+		print 'reconstruct/decoded shape: ', teX_decoded.shape
 
 
 	# displays original + decoded models
 	# first checks if u want to print images, then
 	# checks if your dimension are alirght by: if standard dataset -> if custom dimensions matches each sample length -> if square
 	# fails if doesn't meat the three criteria
-	if FLAGS.encdec_images > 0:
 		n = FLAGS.encdec_images
 		pr_dec = True
 
@@ -264,6 +263,7 @@ if __name__ == '__main__':
 		if pr_dec == True:
 			# original image
 			plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
+			print 'printing original image.'
 			for i in range(n):
 				ax = plt.subplot(2, n, i + n) 	# (row, col, plot number -- identify particular subplot, starts at 1, ends at max ie. row * col)
 				plt.imshow(teX_original[i].reshape(d_width, d_height))
@@ -274,6 +274,7 @@ if __name__ == '__main__':
 
 			# decoded image
 			plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
+			print 'printing decoded image.'
 			for i in range(n):
 				ax = plt.subplot(2, n, i + n) 	# (row, col, plot number -- identify particular subplot, starts at 1, ends at max ie. row * col)
 				plt.imshow(teX_decoded[i].reshape(d_width, d_height))
@@ -290,9 +291,7 @@ if __name__ == '__main__':
 	# - second by scale
 	# - third by increment
 	# will fail and not print if does not pass the two trials
-	if FLAGS.encdec_images > 0:
 		pr_enc = False
-		plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
 
 		if FLAGS.encoded_height * FLAGS.encoded_width != teX_encoded.shape[1]:
 			print 'Not correct dimensions --> %i != %i' %(FLAGS.encoded_height * FLAGS.encoded_width, teX_encoded.shape[1])
@@ -316,7 +315,10 @@ if __name__ == '__main__':
 				if e_width != 1:
 					pr_enc = True
 
+		# encoded image
 		if pr_enc == True:
+			plt.figure(figsize=(20, 2)) 	# figsize -> (w,h) in inches
+			print 'printing encoded image.'
 			for i in range(n):
 				ax = plt.subplot(2, n, i + n)
 				plt.imshow(teX_encoded[i].reshape(e_width, e_height))
@@ -339,9 +341,15 @@ if __name__ == '__main__':
 		np.save(FLAGS.save_reconstructions, dae.reconstruct(teX))
 
 	# Encode the training data and store it
-	dae.transform(trX, name='train', save=FLAGS.encode_train)
-	dae.transform(vlX, name='validation', save=FLAGS.encode_valid)
-	dae.transform(teX, name='test', save=FLAGS.encode_test)
+	if FLAGS.encode_train or FLAGS.encode_test or FLAGS.encode_valid:
+		print 'Saving encoded data in desired path.'
+		dae.transform(trX, name='train', save=FLAGS.encode_train)
+		dae.transform(teX, name='test', save=FLAGS.encode_test)
+
+	if vlX is not None and FLAGS.encode_valid:
+		dae.transform(vlX, name='validation', save=FLAGS.encode_valid)
 
 	# save what the autoencoder has learned <-- currently not working (has to do with Graph(), will fix by adding as_default() like prior.)
 	# dae.get_weights_as_images(28, 28, n_images=FLAGS.weight_images, img_type=FLAGS.image_type)
+
+	print 'Done.'

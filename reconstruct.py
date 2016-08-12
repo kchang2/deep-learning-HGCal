@@ -20,7 +20,7 @@ n_data = np.load('./data/neutrino/rechit_formatted.npy')
 # add extra zeros
 extra_0 = [0 for i in range(17)]
 
-for i in xrange(n):
+for i in xrange(n_data.shape[0]):
 	arr = np.concatenate((n_data[i], extra_0), axis=0).flatten()
 	n_array.append(arr)
 
@@ -41,3 +41,5 @@ for i in range(n):
 	ax.get_yaxis().set_visible(False)
 
 plt.show()
+
+np.save('rechit_test.npy', n_array)
