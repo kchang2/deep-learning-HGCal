@@ -94,7 +94,7 @@ def process(f, outdir):
 		names		= ""
 
 		# event
-		event 		= False
+		event 		= True
 		e_run		= []
 		e_evn		= []
 		e_ngen		= []
@@ -158,7 +158,7 @@ def process(f, outdir):
 				r_cluster2d.append(hit.cluster2d)
 			rechits_array = np.core.records.fromarrays([r_layer, r_wafer, r_cell, r_x, r_y, r_z, \
 				r_eta, r_phi, r_energy, r_time, r_thickness, r_isHalf, r_flags, r_cluster2d], \
-				names='layer, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
+				names='layer, wafer, cell, x, y, z, eta, phi, energy, time, thickness, isHalf, flags, cluster2d')
 			eventArray.append(rechits_array)
 			names += 'rechits'
 		else:
