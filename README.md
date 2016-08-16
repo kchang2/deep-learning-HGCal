@@ -13,7 +13,7 @@ The difference between the two options is that the first option has more feature
 Follow the instruction sfrom the reco-ntuple [README](https://github.com/kchang2/reco-ntuples).
 
 ### Running the second option
-The program runs by python standards
+The program runs by python standard
 ``` python root_processor.py ```
 
 If you want to run it with a script to loop through all the files at once, just specific the parameters within script.py and run that instead
