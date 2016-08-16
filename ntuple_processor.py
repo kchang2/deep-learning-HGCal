@@ -182,7 +182,7 @@ if __name__ == "__main__":
 	if args.outdir == None:
 		if not os.path.exists("data"):
 			os.makedirs("data")
-		outdir = os.getcwd() + 'data/'
+		outdir = os.getcwd() + '/data/'
 	else:
 		outdir = args.outdir
 
@@ -215,7 +215,7 @@ if __name__ == "__main__":
 	# thickness = []
 	# # go through the first file to get characteristics of wafers in the layer
 	# for event in file[0]:
-		
+
 
 
 	# # organized array (by layer selection, wafer characteristics, cell, energy)
