@@ -92,19 +92,7 @@ def process(f, outdir):
 		tree.GetEntry(i)
 		eventArray	= []
 		names		= ""
-
-		# event
-		event 		= True
-		e_run		= []
-		e_evn		= []
-		e_ngen		= []
-		e_nhit		= []
-		e_nclus2d	= []
-		e_nclus3d	= []
-		e_vx 		= []
-		e_vy		= []
-		e_vz		= []
-
+		
 		# rechits
 		rechits 		= True
 		r_layer			= []
@@ -121,24 +109,6 @@ def process(f, outdir):
 		r_isHalf		= []
 		r_flags			= []
 		r_cluster2d		= []
-
-		if event:
-			e_run.append(tree.event.run)
-			e_evn.append(tree.event.evn)
-			e_ngen.append(tree.event.ngen)
-			e_nhit.append(tree.event.nhit)
-			e_nclus2d.append(tree.event.nclus2d)
-			e_nclus3d.append(tree.event.nclus3d)
-			e_vx.append(tree.event.vx)
-			e_vy.append(tree.event.vy)
-			e_vz.append(tree.event.vz)
-			events_array = np.core.records.fromarrays([e_run, e_evn, e_ngen, \
-				e_nhit, e_nclus2d, e_nclus3d, e_vx, e_vy, e_vz], \
-				names = 'run, evn, ngen, nhit, nclus2d, nclus3d, vx, vy, vz')
-			eventArray.append(events_array)
-			names += 'events'
-		else:
-			eventArray.append([])
 
 		if rechits:
 			for hit in tree.rechits:
