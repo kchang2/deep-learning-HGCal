@@ -85,14 +85,14 @@ def process(f, outdir):
 	fIn = rt.TFile.Open(f)						# open .root file
 	tree = fIn.Get('ana/hgc')					# find tree
 	n_entries = tree.GetEntries()				# get total # of entries
-	print n_entries
+	print 'number of events: ' n_entries
 
 	# storing entries
 	for i in xrange(0, n_entries):
 		tree.GetEntry(i)
 		eventArray	= []
 		names		= ""
-		
+
 		# rechits
 		rechits 		= True
 		r_layer			= []

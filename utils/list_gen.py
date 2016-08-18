@@ -14,11 +14,11 @@ parser = argparse.ArgumentParser(description =
 ''')
 
 parser.add_argument("-i", "--pdg", \
-	help="Particle Data Group ID number.", action="store_const")
+	help="Particle Data Group ID number.", action="store", type=int)
 parser.add_argument("-p", "--pt", \
-	help="Particle transverse momentum.", action="store_const")
-parse.add_argument("-n", "--npart" \
-	help="Adding nPart1 to request.", action="store_false")
+	help="Particle transverse momentum.", action="store", type=int)
+parser.add_argument("-n", "--npart", \
+	help="Adding nPart1 to request.", action="store_true", default=False)
 args = parser.parse_args()
 
 
@@ -31,10 +31,10 @@ if __name__ == "__main__":
 	if args.pdg not in [111, 11, 12, 13, 211, 22]:
 		raise ValueError('Aint no reasonable particle.')
 
-	if args.npart == True and int(pt) not in [5, 35, 2, 10]:
+	if args.npart == True and int(args.pt) not in [5, 35, 2, 10]:
 		raise ValueError('Wrong pT')
 	
-	if args.npart == False and int(pt) not in [10, 35]:
+	if args.npart == False and int(args.pt) not in [10, 35]:
 		raise ValueError('Wrong pT')
 
 	if args.pt == None:
@@ -51,15 +51,20 @@ if __name__ == "__main__":
 	# gather directory locations into list
 	cmd = 'eos find root://eoscms.cern.ch//eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/ name "*.root" grep ".root" | grep "%s" | grep "RECO" | grep "%s" > %s.list' %(pdg, pt, pname)
 	os.system(cmd)
+	name = '%s.list' %pname
 
-	f = open('%s.list', 'r') %pname
-	new_f = f.read()
+	f = open(name, 'r') 
+	new_f = f.readlines()
 	f.close()
 
-	f = open('%s.list', 'w') %pname
+	os.remove(name)
+	os.chdir('../data')
+
+	f = open(name, 'w')
 	for line in new_f:
 		if 'hydra' not in line and '.root' in line:
 			f.write(line)
 
 	f.close()
 
+	print 'Process complete.'
