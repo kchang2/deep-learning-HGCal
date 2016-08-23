@@ -140,8 +140,12 @@ class DenoisingAutoencoder(object):
 		self.tf_summary_writer = None
 		self.tf_saver = None
 
+		# cost function storage
+		self.tr_cost = []
+		self.vl_cost = []
 
-	def fit(self, train_set, validation_set=None, restore_previous_model=False, graph=None):
+
+	def fit(self, train_set, corrupted_train_set=None, validation_set=None, restore_previous_model=False, graph=None):
 		''' Fit the model to the data.
 			See keras fit model: https://github.com/fchollet/keras/blob/master/keras/models.py
 
@@ -166,7 +170,7 @@ class DenoisingAutoencoder(object):
 
 			with tf.Session() as self.tf_session:
 				self._initialize_tf_utilities_and_ops(restore_previous_model)
-				self._train_model(train_set, validation_set)
+				self._train_model(train_set, validation_set, corrupted_train_set)
 				self.tf_saver.save(self.tf_session, self.models_dir + self.model_name)
 
 
@@ -188,7 +192,7 @@ class DenoisingAutoencoder(object):
 		# train_writer = tf.train.SummaryWriter(self.summary_dir + '/train', self.tf_session.graph)
 		# test_writer = tf.train.SummaryWriter(self.summary_dir + '/test', self.tf_session.graph)
 
-	def _train_model(self, train_set, validation_set):
+	def _train_model(self, train_set, validation_set, corrupted_train_set):
 		''' Trains the model
 
 		Parameters
@@ -204,13 +208,18 @@ class DenoisingAutoencoder(object):
 		corruption_ratio = np.round(self.corr_frac * train_set.shape[1]).astype(np.int)
 
 		for i in range(self.num_epochs):
-			self._run_train_step(train_set, corruption_ratio)
+			self._run_train_step(train_set, corruption_ratio, corrupted_train_set)
+			
+			if corrupted_train_set is not None:
+				self._run_train_error_and_summaries(i, corrupted_train_set)
+			else:
+				self._run_train_error_and_summaries(i, train_set)
 
 			if validation_set is not None:
 				self._run_validation_error_and_summaries(i, validation_set)
 
 
-	def _run_train_step(self, train_set, corruption_ratio):
+	def _run_train_step(self, train_set, corruption_ratio, corrupted_train_set):
 		''' Run a training step. A training step is made by randomly corrupting
 		the training set, randomly shuffling it, and dividing it into batches and 
 		running the optimizer for each batch.
@@ -225,14 +234,17 @@ class DenoisingAutoencoder(object):
 		self
 		'''
 
-		x_corrupted = self._corrupt_input(train_set, corruption_ratio)
+		if self.corr_type == 'id':
+			x_corrupted = corrupted_train_set
+		else:
+			x_corrupted = self._corrupt_input(train_set, corruption_ratio)
 
 		shuff = zip(train_set, x_corrupted)
 		np.random.shuffle(shuff)
 
 		batches = [_ for _ in utils.gen_batches(shuff, self.batch_size)]
 
-		for batch in batches:
+		for idx, batch in enumerate(batches):
 			x_batch, x_corr_batch = zip(*batch)
 			tr_feed = {self.input_data: x_batch, self.input_data_corr: x_corr_batch}
 			self.tf_session.run(self.train_step, feed_dict=tr_feed)
@@ -257,6 +269,20 @@ class DenoisingAutoencoder(object):
 		else:
 			return np.copy(data)
 
+	def _run_train_error_and_summaries(self, epoch, train_set):
+		tr_feed = {self.input_data: train_set, self.input_data_corr: train_set}
+		result = self.tf_session.run([self.tf_merged_summaries, self.cost], feed_dict=tr_feed)
+		summary_str = result[0]
+		err = result[1]
+
+		self.tf_summary_writer.add_summary(summary_str, epoch)
+		self.tf_summary_writer.flush()
+		self.tr_cost.append(err)
+
+		if self.verbose == 1:
+			print('training cost at step %s: %s' %(epoch, err))
+
+
 	def _run_validation_error_and_summaries(self, epoch, validation_set):
 		''' Run the summaries and error computation on the validation set.
 
@@ -277,7 +303,8 @@ class DenoisingAutoencoder(object):
 
 		self.tf_summary_writer.add_summary(summary_str, epoch) # records all info from summary at point epoch
 		self.tf_summary_writer.flush()
-		
+		self.vl_cost.append(err)
+
 		if self.verbose == 1:
 			print('validation cost at step %s: %s' %(epoch, err))
 			# print("Reconstruction loss at step %s: %s" % (epoch, err))

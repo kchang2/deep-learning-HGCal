@@ -34,8 +34,8 @@ FLAGS = flags.FLAGS
 
 # Global configuration
 flags.DEFINE_string('model_name', 'dae', 'Model name.')
-flags.DEFINE_string('dataset', 'mnist', 'Which dataset to use. ["mnist", "cifar10", "neutrino", "custom"]')
-flags.DEFINE_string('neutrino_path', './rechit_test.npy', 'Path to the neutrino dataset directory.')
+flags.DEFINE_string('dataset', 'neutrino', 'Which dataset to use. ["mnist", "cifar10", "neutrino", "hgcal", "custom"]')
+flags.DEFINE_string('neutrino_path', './data/ae_fmt/pdg12_pt35_t200.npy', 'Path to the neutrino dataset directory.')
 flags.DEFINE_string('train_dataset', '', 'Path to train set .npy file.')
 flags.DEFINE_string('valid_dataset', '', 'Path to valid set .npy file.')
 flags.DEFINE_string('test_dataset', '', 'Path to test set .npy file.')
@@ -44,8 +44,10 @@ flags.DEFINE_boolean('restore_previous_model', False, 'If true, restore previous
 flags.DEFINE_boolean('encode_train', False, 'Whether to encode and store the training set.')
 flags.DEFINE_boolean('encode_valid', False, 'Whether to encode and store the validation set.')
 flags.DEFINE_boolean('encode_test', False, 'Whether to encode and store the test set.')
-flags.DEFINE_string('save_reconstructions', '', 'Path to a .npy file to save the reconstructions of the model.')
-flags.DEFINE_string('save_parameters', '', 'Path to save the parameters of the model.')
+flags.DEFINE_string('save_reconstructions', 'r_pdg12_pt35_200um_feat49.npy', 'Path to a .npy file to save the reconstructions of the model.')
+flags.DEFINE_string('save_parameters', 'p_pdg12_pt35_200um_feat49.npy', 'Path to save the parameters of the model.')
+flags.DEFINE_string('save_tr_cost', 'tr_cost_pdg12_pt35_200um_feat49.npy', 'Path to save the training cost vs. epoch.')
+flags.DEFINE_string('save_vl_cost', 'vl_cost_pdg12_pt35_200um_feat49.npy', 'Path to save the validation cost vs. epoch.')
 flags.DEFINE_string('weights', None, 'Path to a numpy array containing the weights of the autoencoder.')
 flags.DEFINE_string('h_bias', None, 'Path to a numpy array containing the encoder bias vector.')
 flags.DEFINE_string('v_bias', None, 'Path to a numpy array containing the decoder bias vector.')
@@ -54,10 +56,10 @@ flags.DEFINE_integer('seed', -1, 'Seed for the random generators (>=0). Useful f
 
 # Stacked Denoising Autoencoder specific parameters
 flags.DEFINE_string('main_dir', 'dae/', 'Directory to store data relative to the algorithm.')
-flags.DEFINE_integer('n_components', 256, 'Number of hidden units/features in the dae.')
-flags.DEFINE_float('l2reg', 5e-4, 'Regularization parameter. If 0, no regularization.')
-flags.DEFINE_string('corr_type', 'masking', 'Type of input corruption. ["none", "masking", "salt_and_pepper"]')
-flags.DEFINE_float('corr_frac', 0, 'Fraction of the input to corrupt.')
+flags.DEFINE_integer('n_components', 49, 'Number of hidden units/features in the dae.') #256
+flags.DEFINE_float('l2reg', 0, 'Regularization parameter. If 0, no regularization.') #5e-4
+flags.DEFINE_string('corr_type', 'id', 'Type of input corruption. ["none", "masking", "salt_and_pepper", "id"]')
+flags.DEFINE_float('corr_frac', 0.0, 'Fraction of the input to corrupt.')
 flags.DEFINE_integer('xavier_init', 1, 'Value for the constant in xavier weights initialization.')
 flags.DEFINE_string('enc_act_func', 'tanh', 'Activation function for the encoder. ["sigmoid", "tanh"]')
 flags.DEFINE_string('dec_act_func', 'none', 'Activation function for the decoder. ["sigmoid", "tanh", "none"]')
@@ -67,24 +69,24 @@ flags.DEFINE_integer('verbose', 1, 'Level of verbosity. 0 - silent, 1 - print ac
 flags.DEFINE_string('opt', 'ada_grad', '["gradient_descent", "ada_grad", "momentum", "adam", "ada_delta"]')
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_float('momentum', 0.4, 'Momentum parameter.')
-flags.DEFINE_integer('num_epochs', 10, 'Number of epochs.')
+flags.DEFINE_integer('num_epochs', 150, 'Number of epochs.')
 flags.DEFINE_integer('batch_size', 128, 'Size of each mini-batch.')
 
 flags.DEFINE_integer('weight_images', 10, 'Number of weight images to generate.')
 flags.DEFINE_integer('encdec_images', 10, 'Number of encoded and decoded images to generate (ie. 10 means each using the same 10 data).')
 flags.DEFINE_boolean('custom_dimension', False, 'If image is not a square, then True.')
-flags.DEFINE_integer('encoded_width', 16, 'Encoded image width')
-flags.DEFINE_integer('encoded_height', 16, 'Encoded image height')
+flags.DEFINE_integer('encoded_width', 10, 'Encoded image width')
+flags.DEFINE_integer('encoded_height', 10, 'Encoded image height')
 flags.DEFINE_integer('decoded_width', 28, 'Decoded image width')
 flags.DEFINE_integer('decoded_height', 28, 'Decoded image height')
 flags.DEFINE_string('image_type', 'grey', 'Color image produced ["grey", "RGB", "CMYK"]')
 
 
-assert FLAGS.dataset in ['mnist','cifar10','neutrino','custom']
+assert FLAGS.dataset in ['mnist','cifar10','neutrino','hgcal','custom']
 assert FLAGS.train_dataset != '' if FLAGS.dataset == 'custom' else True
 assert FLAGS.enc_act_func in ['sigmoid', 'tanh']
 assert FLAGS.dec_act_func in ['sigmoid', 'tanh', 'none']
-assert FLAGS.corr_type in ['masking', 'salt_and_pepper', 'none']
+assert FLAGS.corr_type in ['masking', 'salt_and_pepper', 'custom', 'id']
 assert 0. <= FLAGS.corr_frac <= 1.
 assert FLAGS.loss_func in ['cross_entropy', 'mean_squared']
 assert FLAGS.opt in ['gradient_descent', 'ada_grad', 'momentum', 'adam', 'ada_delta']
@@ -174,6 +176,12 @@ if __name__ == '__main__':
 		d_width = None 		# FIX LATER
 		d_height = None
 
+	if FLAGS.corr_type == 'id':
+		c_trX = copy.deepcopy(trX)
+		trX = np.zeros(shape=trX.shape)
+	else:
+		c_trX = None
+
 	# used to display original image
 	teX_original = copy.deepcopy(teX)
 
@@ -224,7 +232,7 @@ if __name__ == '__main__':
 	# fit the model 
 	# NOT SURE IF teX or vlX
 	# dae.fit(trX, validation_set=vlX, restore_previous_model=FLAGS.restore_previous_model)
-	dae.fit(trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
+	dae.fit(trX, c_trX, validation_set=teX, restore_previous_model=FLAGS.restore_previous_model)
 
 	# computes reconstructed models
 	if FLAGS.encdec_images > 0:
@@ -334,6 +342,11 @@ if __name__ == '__main__':
 		params = dae.get_model_parameters()
 		for p in params:
 			np.save(FLAGS.save_parameters + '-' + p, params[p])
+
+	# save cost arrays
+	print ('saving cost to epoch...')
+	np.save(FLAGS.save_tr_cost, dae.tr_cost)
+	np.save(FLAGS.save_vl_cost, dae.vl_cost)
 
 	# Save the reconstructions of the model
 	if FLAGS.save_reconstructions:

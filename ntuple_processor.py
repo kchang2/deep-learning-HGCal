@@ -23,10 +23,11 @@ import os, sys, platform
 import glob
 import sys
 
-sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
+sys.path.insert(0, './utils')
 import wafer
 
 from FastProgressBar import progressbar
+from copy import deepcopy
 
 
 # Argument parser
@@ -91,7 +92,7 @@ def process(f, outdir):
 	fIn = rt.TFile.Open(f)						# open .root file
 	tree = fIn.Get('ana/hgc')					# find tree
 	n_entries = tree.GetEntries()				# get total # of entries
-	print 'number of events: ' n_entries
+	print 'number of events: ', n_entries
 
 	# storing entries
 	for i in xrange(0, n_entries):
@@ -177,14 +178,14 @@ def create_feeding_arrays(files, t_list, outdir):
 
 	# creating wafers with appropriate cell count
 	# l_array = [[] for i in range(0, 28)]			# 28 layers in HGCal
-	w_array = [[] for i in range(0, 461)]			# 461 wafers in layer 10 of HGCal
+	w_array = [[] for i in range(0, 516)]			# 516 total wafers in layer 10 of HGCal
 	c1_array = [0 for i in range(240)]				# thinner wafers, nominally 256
 	c23_array = [0 for i in range(133)]				# thicker wafers, nominally 128, energy in GeV
 
 
 	for idx, t in np.ndenumerate(t_list):
 		print t
-		if idx == 0:
+		if idx[0] == 0:
 			c_array = c1_array
 			empty_array = [0 for i in xrange(240)]
 		else:
@@ -194,19 +195,22 @@ def create_feeding_arrays(files, t_list, outdir):
 		for i in t:
 			w_array[i] = deepcopy(c_array)
 
-
+	# IndexError wafers
+	weird_wf = []
 	for fi in files:
 		f = np.load(fi)
 
 		for event in f:
 			layer = deepcopy(w_array)			# create a clean layer 10 for each event
 
+
 			for hit in event[0]:
 				if hit['layer'] == 10: 
 					try:
 						layer[hit['wafer']][hit['cell']] = hit['energy']		# both index at 0
 					except IndexError:
-						print 'Index (%i,%i) out of range' %(hit['wafer'], [hit['cell'])
+						# print 'Index (w: %i,c: %i), (t: %i,h: %i) out of range' %(hit['wafer'], hit['cell'], hit['thickness'],hit['isHalf'])
+						weird_wf.append(hit['wafer'])
 
 			outArray.append(layer)				#append layer 10 instance to outArray
 
@@ -221,19 +225,21 @@ def create_feeding_arrays(files, t_list, outdir):
 					else:
 						pass
 
+	weird_wf = set(weird_wf)
 
 	print 'writing autoencoding formatted file'
 
 	# save 100um dataset to file
-	filename = str(f[0][:-5]) + 't100.npy'		# replaces .root with .npy
+	filename = str(files[0][:-5]) + 't100.npy'		# replaces .root with .npy
 	print filename
 	filename = filename.split("/")[-1]			# removes directory prefixes
+	print filename
 	filepath = outdir+filename
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, t100)					# saves array into .npy file
 
 	# save 200um dataset to file
-	filename = str(f[0][:-5]) + 't200.npy'		# replaces .root with .npy
+	filename = str(files[0][:-5]) + 't200.npy'		# replaces .root with .npy
 	print filename
 	filename = filename.split("/")[-1]			# removes directory prefixes
 	filepath = outdir+filename
@@ -241,13 +247,17 @@ def create_feeding_arrays(files, t_list, outdir):
 	np.save(filepath, t200)					# saves array into .npy file
 
 	# save 300um dataset to file
-	filename = str(f[0][:-5]) + 't300.npy'		# replaces .root with .npy
+	filename = str(files[0][:-5]) + 't300.npy'		# replaces .root with .npy
 	print filename
 	filename = filename.split("/")[-1]			# removes directory prefixes
 	filepath = outdir+filename
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, t300)					# saves array into .npy file
 
+	# save the weird wafers
+	filepath = outdir + 'weird_wafer.npy'
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, weird_wf)
 
 	print 'Process complete.'
 	    
@@ -289,13 +299,13 @@ if __name__ == "__main__":
 	# move back to appropriate folder
 	os.chdir(outdir)
 
-	if not os.path.exists("ae_fmt")
+	if not os.path.exists("ae_fmt"):
 		os.makedirs("ae_fmt")
-		outdir = os.getcwd() + '/ae_fmt/'
+	outdir = os.getcwd() + '/ae_fmt/'		
 
-	files = [f for f in os.listdir('.') if f.endswith('.npy')]
-	# files = [f for f in files if '12' not in f]
-
+	files = [f for f in os.listdir('./pdg/') if f.endswith('.npy')]
+	files = [f for f in files if 'pdg12' in f]
+	os.chdir('./pdg/')
 
 	try:
 		create_feeding_arrays(files, t_list, outdir)
