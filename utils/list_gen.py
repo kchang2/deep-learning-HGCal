@@ -49,9 +49,9 @@ if __name__ == "__main__":
 
 
 	# gather directory locations into list
-	cmd = 'eos find root://eoscms.cern.ch//eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/ name "*.root" grep ".root" | grep "%s" | grep "RECO" | grep "%s" > %s.list' %(pdg, pt, pname)
+	cmd = 'eos find root://eoscms.cern.ch//eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/ name "*.root" grep ".root" | grep "%s" | grep "RECO" | grep "%s" > %s_%s.list' %(pdg, pt, pname, pt)
 	os.system(cmd)
-	name = '%s.list' %pname
+	name = '%s_%s.list' %(pname, pt)
 
 	f = open(name, 'r') 
 	new_f = f.readlines()

@@ -21,6 +21,10 @@ import ROOT as rt
 import numpy as np
 import os, sys, platform
 import glob
+import sys
+
+sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
+import wafer
 
 from FastProgressBar import progressbar
 
@@ -38,6 +42,8 @@ parser.add_argument("-d", "--directory", \
 	help="Process all files in this directory. Default is current path.", action="store")
 parser.add_argument("-o", "--outdir", \
 	help="Directory to save output to. Defaults to Data/.", action="store")
+parser.add_argument("-t", "--thickdir", \
+	help="location of thickness separation array.", action="store")
 args = parser.parse_args()
 
 
@@ -146,7 +152,108 @@ def process(f, outdir):
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, outArray)					# saves array into .npy file
 	print 'Processing complete. \n'
- 
+
+
+
+def create_feeding_arrays(files, t_list, outdir):
+	''' Merge data into three numpy datasets sorted by wafer thickness.
+		Currently only using layer 10 data.
+
+	Parameters
+	----------
+	t_list	:	Thickness list
+	outdir	:	Location where dae-ready npy file will be located
+	fname	:	name of dae npy file
+
+	'''
+
+	# creating thickness arrays formatted for autoencoding
+	t100 = []
+	t200 = []
+	t300 = []
+
+	# creating organized array for picture reconstruction
+	outArray = []
+
+	# creating wafers with appropriate cell count
+	# l_array = [[] for i in range(0, 28)]			# 28 layers in HGCal
+	w_array = [[] for i in range(0, 461)]			# 461 wafers in layer 10 of HGCal
+	c1_array = [0 for i in range(240)]				# thinner wafers, nominally 256
+	c23_array = [0 for i in range(133)]				# thicker wafers, nominally 128, energy in GeV
+
+
+	for idx, t in np.ndenumerate(t_list):
+		print t
+		if idx == 0:
+			c_array = c1_array
+			empty_array = [0 for i in xrange(240)]
+		else:
+			c_array = c23_array
+			empty_array = [0 for i in xrange(133)]
+
+		for i in t:
+			w_array[i] = deepcopy(c_array)
+
+
+	for fi in files:
+		f = np.load(fi)
+
+		for event in f:
+			layer = deepcopy(w_array)			# create a clean layer 10 for each event
+
+			for hit in event[0]:
+				if hit['layer'] == 10: 
+					try:
+						layer[hit['wafer']][hit['cell']] = hit['energy']		# both index at 0
+					except IndexError:
+						print 'Index (%i,%i) out of range' %(hit['wafer'], [hit['cell'])
+
+			outArray.append(layer)				#append layer 10 instance to outArray
+
+			for indx, w in enumerate(layer):
+				if w != empty_array:
+					if indx in t_list[0]:
+						t100.append(w)
+					if indx in t_list[1]:
+						t200.append(w)
+					if indx in t_list[2]:
+						t300.append(w)
+					else:
+						pass
+
+
+	print 'writing autoencoding formatted file'
+
+	# save 100um dataset to file
+	filename = str(f[0][:-5]) + 't100.npy'		# replaces .root with .npy
+	print filename
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t100)					# saves array into .npy file
+
+	# save 200um dataset to file
+	filename = str(f[0][:-5]) + 't200.npy'		# replaces .root with .npy
+	print filename
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t200)					# saves array into .npy file
+
+	# save 300um dataset to file
+	filename = str(f[0][:-5]) + 't300.npy'		# replaces .root with .npy
+	print filename
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t300)					# saves array into .npy file
+
+
+	print 'Process complete.'
+	    
+
+
+
 
 if __name__ == "__main__":
 	if args.outdir == None:
@@ -155,6 +262,11 @@ if __name__ == "__main__":
 		outdir = os.getcwd() + '/data/'
 	else:
 		outdir = args.outdir
+
+	if args.thickdir == None:
+		t_list = wafer.genThickness()
+	else:
+		t_list = np.load(thickdir)
 
 	if args.directory == None:
 		directory = os.getcwd()
@@ -174,54 +286,20 @@ if __name__ == "__main__":
 	# and save them into an array for that .npy, and then merge all these arrays so we have independent data for
 	# the same layer/wafer but different simulation.
 
+	# move back to appropriate folder
+	os.chdir(outdir)
 
-	# Format files for dAe (rechit only)
-	# dirname = os.path.basename(os.path.normpath(directory)) + '_formatted'
-	# os.mkdir(outdir + dirname + '/')
+	if not os.path.exists("ae_fmt")
+		os.makedirs("ae_fmt")
+		outdir = os.getcwd() + '/ae_fmt/'
 
-	# # get list of .npy files created prior
-	# files = [f for f in os.listdir(outdir) if f.endswith('.npy')]
-
-	# thickness = []
-	# # go through the first file to get characteristics of wafers in the layer
-	# for event in file[0]:
+	files = [f for f in os.listdir('.') if f.endswith('.npy')]
+	# files = [f for f in files if '12' not in f]
 
 
-
-	# # organized array (by layer selection, wafer characteristics, cell, energy)
-	# outArray_o = []
-
-	# # loops through each file and extract layer 10 info
-	# for f in files:
-	# 	arr = np.load(f)
-
-
-	# 	for event in arr:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- #    mu=np.mean(result)
- #    sav=np.save('%s' %(task),mu)
-
-
+	try:
+		create_feeding_arrays(files, t_list, outdir)
+	except TypeError:
+		raise
 
 	raw_input("Operation completed\nPress enter to return to the terminal.")
