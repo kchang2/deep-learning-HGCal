@@ -5,6 +5,11 @@
 # - https://github.com/blackecho/Deep-Learning-TensorFlow/blob/master/command_line/run_autoencoder.py
 # - https://gist.github.com/blackecho/3a6e4d512d3aa8aa6cf9
 #
+# Features in progress
+# - reconstruction for non-ID corrupted dataset
+# - easier streamline for saving files with similar name
+# - check usage of validation and test
+#
 #
 # Needs to have TensorFlow, numpy, and scikit installed on computer.
 # =============================================================================
@@ -17,8 +22,8 @@ import os, math
 import copy
 
 import sys
-sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/models')
-sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
+sys.path.insert(0, './models')
+sys.path.insert(0, './utils')
 
 import autoencoder
 import config
@@ -35,7 +40,7 @@ FLAGS = flags.FLAGS
 # Global configuration
 flags.DEFINE_string('model_name', 'dae', 'Model name.')
 flags.DEFINE_string('dataset', 'neutrino', 'Which dataset to use. ["mnist", "cifar10", "neutrino", "hgcal", "custom"]')
-flags.DEFINE_string('neutrino_path', './data/ae_fmt/pdg12_pt35_t200.npy', 'Path to the neutrino dataset directory.')
+flags.DEFINE_string('neutrino_path', './data/ae_fmt/pdg12_pt35_t100.npy', 'Path to the neutrino dataset directory.')
 flags.DEFINE_string('train_dataset', '', 'Path to train set .npy file.')
 flags.DEFINE_string('valid_dataset', '', 'Path to valid set .npy file.')
 flags.DEFINE_string('test_dataset', '', 'Path to test set .npy file.')
@@ -44,10 +49,10 @@ flags.DEFINE_boolean('restore_previous_model', False, 'If true, restore previous
 flags.DEFINE_boolean('encode_train', False, 'Whether to encode and store the training set.')
 flags.DEFINE_boolean('encode_valid', False, 'Whether to encode and store the validation set.')
 flags.DEFINE_boolean('encode_test', False, 'Whether to encode and store the test set.')
-flags.DEFINE_string('save_reconstructions', 'r_pdg12_pt35_200um_feat49.npy', 'Path to a .npy file to save the reconstructions of the model.')
-flags.DEFINE_string('save_parameters', 'p_pdg12_pt35_200um_feat49.npy', 'Path to save the parameters of the model.')
-flags.DEFINE_string('save_tr_cost', 'tr_cost_pdg12_pt35_200um_feat49.npy', 'Path to save the training cost vs. epoch.')
-flags.DEFINE_string('save_vl_cost', 'vl_cost_pdg12_pt35_200um_feat49.npy', 'Path to save the validation cost vs. epoch.')
+flags.DEFINE_string('save_reconstructions', 'pdg12_pt35_t100_feat200_dec', 'Path to a .npy file to save the reconstructions of the model.')
+flags.DEFINE_string('save_parameters', 'pdg12_pt35_t100_feat200_p', 'Path to save the parameters of the model.')
+flags.DEFINE_string('save_tr_cost', 'pdg12_pt35_t100_feat200_tr_cost', 'Path to save the training cost vs. epoch.')
+flags.DEFINE_string('save_vl_cost', 'pdg12_pt35_t100_feat200_vl_cost', 'Path to save the validation cost vs. epoch.')
 flags.DEFINE_string('weights', None, 'Path to a numpy array containing the weights of the autoencoder.')
 flags.DEFINE_string('h_bias', None, 'Path to a numpy array containing the encoder bias vector.')
 flags.DEFINE_string('v_bias', None, 'Path to a numpy array containing the decoder bias vector.')
@@ -56,7 +61,7 @@ flags.DEFINE_integer('seed', -1, 'Seed for the random generators (>=0). Useful f
 
 # Stacked Denoising Autoencoder specific parameters
 flags.DEFINE_string('main_dir', 'dae/', 'Directory to store data relative to the algorithm.')
-flags.DEFINE_integer('n_components', 49, 'Number of hidden units/features in the dae.') #256
+flags.DEFINE_integer('n_components', 100, 'Number of hidden units/features in the dae.') #256
 flags.DEFINE_float('l2reg', 0, 'Regularization parameter. If 0, no regularization.') #5e-4
 flags.DEFINE_string('corr_type', 'id', 'Type of input corruption. ["none", "masking", "salt_and_pepper", "id"]')
 flags.DEFINE_float('corr_frac', 0.0, 'Fraction of the input to corrupt.')
@@ -73,7 +78,7 @@ flags.DEFINE_integer('num_epochs', 150, 'Number of epochs.')
 flags.DEFINE_integer('batch_size', 128, 'Size of each mini-batch.')
 
 flags.DEFINE_integer('weight_images', 10, 'Number of weight images to generate.')
-flags.DEFINE_integer('encdec_images', 10, 'Number of encoded and decoded images to generate (ie. 10 means each using the same 10 data).')
+flags.DEFINE_integer('encdec_images', 0, 'Number of encoded and decoded images to generate (ie. 10 means each using the same 10 data).')
 flags.DEFINE_boolean('custom_dimension', False, 'If image is not a square, then True.')
 flags.DEFINE_integer('encoded_width', 10, 'Encoded image width')
 flags.DEFINE_integer('encoded_height', 10, 'Encoded image height')
@@ -126,8 +131,9 @@ if __name__ == '__main__':
 	models_dir = os.path.join(main_dir, config.models_dir)
 	data_dir = os.path.join(main_dir, config.data_dir)
 	summary_dir = os.path.join(main_dir, config.summary_dir)
+	result_dir = os.path.join(data_dir, 'result/')
 
-	for d in [models_dir, data_dir, summary_dir]:
+	for d in [models_dir, data_dir, summary_dir, result_dir]:
 		if not os.path.exists(d):
 			os.makedirs(d)
 
@@ -341,17 +347,23 @@ if __name__ == '__main__':
 		print('Saving the parameters of the model...')
 		params = dae.get_model_parameters()
 		for p in params:
-			np.save(FLAGS.save_parameters + '-' + p, params[p])
+			np.save(result_dir + FLAGS.save_parameters + '-' + p, params[p])
 
 	# save cost arrays
 	print ('saving cost to epoch...')
-	np.save(FLAGS.save_tr_cost, dae.tr_cost)
-	np.save(FLAGS.save_vl_cost, dae.vl_cost)
+	np.save(result_dir + FLAGS.save_tr_cost, dae.tr_cost)
+	np.save(result_dir + FLAGS.save_vl_cost, dae.vl_cost)
 
 	# Save the reconstructions of the model
 	if FLAGS.save_reconstructions:
 		print('Saving the reconstructions for the test set...')
-		np.save(FLAGS.save_reconstructions, dae.reconstruct(teX))
+		np.save(result_dir + FLAGS.save_reconstructions, dae.reconstruct(teX, save=True))
+		if FLAGS.corr_type == 'id':
+			teRef = np.zeros(shape=teX.shape)
+			print('Test set reconstruction loss: {}'.format(dae.compute_reconstruction_loss(teX,teRef)))
+		else:
+			print "Cannot save reconstruction -- this hasn't been updated yet"
+
 
 	# Encode the training data and store it
 	if FLAGS.encode_train or FLAGS.encode_test or FLAGS.encode_valid:

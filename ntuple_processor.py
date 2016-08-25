@@ -4,6 +4,7 @@
 # and produces appropriate numpy arrays for the trees inside. 
 # This is the hardcore version of the former root_processor.py
 # Has to run on cmsenv.
+# Then formats them for autoencoding.
 #
 #
 # Blocks (BLOCKS) of code taken from RootProcessor.py
@@ -173,14 +174,19 @@ def create_feeding_arrays(files, t_list, outdir):
 	t200 = []
 	t300 = []
 
-	# creating organized array for picture reconstruction
+	# creating arrays formatted for displaying which wafers are on which samples
+	t100_wafer = []
+	t200_wafer = []
+	t300_wafer = []
+
+	# creating organized array for picture reconstruction of entire layer
 	outArray = []
 
 	# creating wafers with appropriate cell count
 	# l_array = [[] for i in range(0, 28)]			# 28 layers in HGCal
 	w_array = [[] for i in range(0, 516)]			# 516 total wafers in layer 10 of HGCal
 	c1_array = [0 for i in range(240)]				# thinner wafers, nominally 256
-	c23_array = [0 for i in range(133)]				# thicker wafers, nominally 128, energy in GeV
+	c23_array = [0 for i in range(133)]				# thicker wafers, nominally 128, position info
 
 
 	for idx, t in np.ndenumerate(t_list):
@@ -202,64 +208,97 @@ def create_feeding_arrays(files, t_list, outdir):
 
 		for event in f:
 			layer = deepcopy(w_array)			# create a clean layer 10 for each event
-
+			# layer_wafer = []
 
 			for hit in event[0]:
 				if hit['layer'] == 10: 
 					try:
 						layer[hit['wafer']][hit['cell']] = hit['energy']		# both index at 0
+
 					except IndexError:
 						# print 'Index (w: %i,c: %i), (t: %i,h: %i) out of range' %(hit['wafer'], hit['cell'], hit['thickness'],hit['isHalf'])
 						weird_wf.append(hit['wafer'])
 
-			outArray.append(layer)				#append layer 10 instance to outArray
+			# outArray.append(layer)				#append layer 10 instance to outArray
+			# outArray.append(layer_wafer)
 
 			for indx, w in enumerate(layer):
 				if w != empty_array:
 					if indx in t_list[0]:
 						t100.append(w)
-					if indx in t_list[1]:
+						t100_wafer.append(indx)
+					elif indx in t_list[1]:
 						t200.append(w)
-					if indx in t_list[2]:
+						t200_wafer.append(indx)
+					elif indx in t_list[2]:
 						t300.append(w)
+						t300_wafer.append(indx)
 					else:
 						pass
 
+		print 'completed processing %s.' %fi
 	weird_wf = set(weird_wf)
 
 	print 'writing autoencoding formatted file'
+	fname = str(files[0][:-5])
 
 	# save 100um dataset to file
-	filename = str(files[0][:-5]) + 't100.npy'		# replaces .root with .npy
-	print filename
+	filename = fname + 't100.npy'		# replaces .root with .npy
 	filename = filename.split("/")[-1]			# removes directory prefixes
-	print filename
 	filepath = outdir+filename
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, t100)					# saves array into .npy file
 
 	# save 200um dataset to file
-	filename = str(files[0][:-5]) + 't200.npy'		# replaces .root with .npy
-	print filename
+	filename = fname + 't200.npy'		# replaces .root with .npy
 	filename = filename.split("/")[-1]			# removes directory prefixes
 	filepath = outdir+filename
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, t200)					# saves array into .npy file
 
 	# save 300um dataset to file
-	filename = str(files[0][:-5]) + 't300.npy'		# replaces .root with .npy
-	print filename
+	filename = fname + 't300.npy'		# replaces .root with .npy
 	filename = filename.split("/")[-1]			# removes directory prefixes
 	filepath = outdir+filename
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, t300)					# saves array into .npy file
+
+
+	print 'writing additional information files'
 
 	# save the weird wafers
 	filepath = outdir + 'weird_wafer.npy'
 	print 'writing file ' + os.path.abspath(filepath) + '...'
 	np.save(filepath, weird_wf)
 
-	print 'Process complete.'
+	# save 100um dataset position to file
+	filename = fname + 't100_src.npy'		# replaces .root with .npy
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t100_wafer)					# saves array into .npy file
+
+	# save 200um dataset positions to file
+	filename = fname + 't200_src.npy'		# replaces .root with .npy
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t200_wafer)					# saves array into .npy file
+
+	# save 300um dataset positions to file
+	filename = fname + 't300_src.npy'		# replaces .root with .npy
+	filename = filename.split("/")[-1]			# removes directory prefixes
+	filepath = outdir+filename
+	print 'writing file ' + os.path.abspath(filepath) + '...'
+	np.save(filepath, t300_wafer)					# saves array into .npy file
+
+	# saving entire layer
+	# filename = fname + 'layer10.npy'		# replaces .root with .npy
+	# filename = filename.split("/")[-1]			# removes directory prefixes
+	# filepath = outdir+filename
+	# print 'writing file ' + os.path.abspath(filepath) + '...'
+	# np.save(filepath, outArray)					# saves array into .npy file
+	# print 'Process complete.'
 	    
 
 

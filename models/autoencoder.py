@@ -15,7 +15,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import sys
-sys.path.insert(0, '/Users/kaichang/Documents/summer_2016/deep-learning/utils')
+sys.path.insert(0, './utils')
 
 import utils
 
@@ -615,7 +615,7 @@ class DenoisingAutoencoder(object):
 
 		with g.as_default():
 			with tf.Session() as self.tf_session:
-				self.tf_saver.restore(self.tf.session, self.model_path)
+				self.tf_saver.restore(self.tf_session, self.model_path)
 				return self.cost.eval({self.input_data_corr: data, self.input_data: data_ref})
 
 
